@@ -1,0 +1,43 @@
+/* Video protection styles */
+.video-protected {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.video-protected video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+.video-protected video::-webkit-media-controls-play-button,
+.video-protected video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}
+
+.video-protected video::-webkit-media-controls-download-button {
+  display: none !important;
+}
+
+/* Prevent text selection and right-click on video containers */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Hide download button in Firefox */
+.video-protected video {
+  -moz-user-select: none;
+}
+
+/* Additional protection for mobile devices */
+@media (max-width: 768px) {
+  .video-protected video {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+}

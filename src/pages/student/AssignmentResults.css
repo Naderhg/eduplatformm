@@ -1,0 +1,411 @@
+.assignment-results {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.page-header p {
+  color: #6b7280;
+  margin: 5px 0 0 0;
+}
+
+.results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.score-summary {
+  text-align: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.score-summary h2 {
+  font-size: 24px;
+  margin: 0 0 20px 0;
+}
+
+.score-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.current-score {
+  font-size: 48px;
+  font-weight: 800;
+}
+
+.max-score {
+  font-size: 24px;
+  opacity: 0.8;
+}
+
+.percentage {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.graded-date {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Ranking Summary Styles for Students */
+.ranking-summary {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.ranking-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ranking-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px 80px;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px 80px;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.ranking-row:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-row.your-rank {
+  background: #035a4e;
+  border-color: #f59e0b;
+  font-weight: 600;
+}
+
+.rank-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-cell {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.score-cell {
+  font-weight: 600;
+  color: #059669;
+  text-align: right;
+}
+
+.percentage-cell {
+  font-weight: 600;
+  color: #7c3aed;
+  text-align: right;
+}
+
+.more-submissions {
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
+  font-size: 14px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px dashed #cbd5e1;
+}
+
+/* Rank Icons */
+.rank-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-icon.gold {
+  color: #fbbf24;
+}
+
+.rank-icon.silver {
+  color: #9ca3af;
+}
+
+.rank-icon.bronze {
+  color: #f97316;
+}
+
+.rank-number {
+  font-weight: 600;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.score-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.current-score {
+  font-size: 48px;
+  font-weight: 700;
+}
+
+.max-score {
+  font-size: 24px;
+  opacity: 0.9;
+}
+
+.percentage {
+  font-size: 20px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+
+.graded-date {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-top: 10px;
+}
+
+.feedback-section {
+  padding: 20px;
+}
+
+.feedback-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 15px 0;
+}
+
+.feedback-content {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #3b82f6;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.content-section {
+  padding: 20px;
+}
+
+.content-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 15px 0;
+}
+
+.submission-content {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 6px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.submission-content p {
+  margin: 0 0 8px 0;
+}
+
+.mcq-results {
+  padding: 20px;
+}
+
+.mcq-results h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 20px 0;
+}
+
+.mcq-result {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.question-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.option {
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.option.correct {
+  background: #dafad1;
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.bg-success{
+  background: #2b6949;
+}
+
+.option.selected {
+  border-color: #3b82f6;
+  border-width: 2px;
+}
+
+.option.selected.correct {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.option.selected:not(.correct) {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.result-status {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.result-status.correct {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.result-status.incorrect {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.error-container {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-container h2 {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .assignment-results {
+    padding: 10px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .score-display {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .current-score {
+    font-size: 36px;
+  }
+  
+  .max-score {
+    font-size: 18px;
+  }
+  
+  .mcq-result {
+    padding: 15px;
+  }
+  
+  .option {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}

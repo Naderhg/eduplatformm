@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Test with Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        video {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Video Playback Test</h1>
+    
+    <div id="status" class="status info">
+        Testing video playback with authentication...
+    </div>
+
+    <div>
+        <h2>Test Video 1 - Direct URL</h2>
+        <video id="video1" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div>
+        <h2>Test Video 2 - With Token</h2>
+        <video id="video2" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        // Test video URLs - replace with actual video filename from your course
+        const testVideoFile = 'video-1767988917025-64527657.mp4'; // Replace with actual video filename
+        const baseUrl = 'http://localhost:5000/api/files/videos/';
+        
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        
+        // Update status
+        const statusDiv = document.getElementById('status');
+        
+        if (token) {
+            statusDiv.innerHTML = `Token found: ${token.substring(0, 20)}...`;
+            statusDiv.className = 'status success';
+            
+            // Set video sources
+            document.querySelector('#video1 source').src = baseUrl + testVideoFile;
+            document.querySelector('#video2 source').src = baseUrl + testVideoFile + '?token=' + token;
+            
+            // Load videos
+            document.getElementById('video1').load();
+            document.getElementById('video2').load();
+            
+            // Add error handlers
+            document.getElementById('video1').addEventListener('error', function(e) {
+                console.error('Video 1 error:', e);
+                const error = e.target.error;
+                if (error) {
+                    statusDiv.innerHTML = `Video 1 Error: ${error.message} (Code: ${error.code})`;
+                    statusDiv.className = 'status error';
+                }
+            });
+            
+            document.getElementById('video2').addEventListener('error', function(e) {
+                console.error('Video 2 error:', e);
+                const error = e.target.error;
+                if (error) {
+                    statusDiv.innerHTML = `Video 2 Error: ${error.message} (Code: ${error.code})`;
+                    statusDiv.className = 'status error';
+                }
+            });
+            
+            // Add success handlers
+            document.getElementById('video1').addEventListener('canplay', function() {
+                console.log('Video 1 can play');
+                statusDiv.innerHTML = 'Video 1 loaded successfully!';
+                statusDiv.className = 'status success';
+            });
+            
+            document.getElementById('video2').addEventListener('canplay', function() {
+                console.log('Video 2 can play');
+                statusDiv.innerHTML = 'Video 2 loaded successfully with token!';
+                statusDiv.className = 'status success';
+            });
+            
+        } else {
+            statusDiv.innerHTML = 'No token found in localStorage. Please login first.';
+            statusDiv.className = 'status error';
+        }
+        
+        // Log video URLs for debugging
+        console.log('Video 1 URL:', document.querySelector('#video1 source').src);
+        console.log('Video 2 URL:', document.querySelector('#video2 source').src);
+    </script>
+</body>
+</html>

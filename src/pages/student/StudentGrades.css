@@ -1,0 +1,227 @@
+.student-grades .page-header {
+  margin-bottom: var(--space-6);
+}
+
+/* Grades Overview */
+.grades-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.grade-stat-card {
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.grade-circle {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.grade-circle svg {
+  width: 80px;
+  height: 80px;
+  transform: rotate(-90deg);
+}
+
+.grade-circle-bg {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 4;
+}
+
+.grade-circle-fill {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.grade-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.grade-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.grade-icon-success {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.grade-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.grade-stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.grade-stat-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.grade-stat-description {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Course Grades */
+.grades-by-course {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.course-grades {
+  overflow: hidden;
+}
+
+.course-grades-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border-light);
+  background-color: var(--color-background);
+}
+
+.course-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.course-name {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.course-average {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.course-average strong {
+  color: var(--color-primary);
+}
+
+/* Grades Table */
+.grades-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.grades-table th,
+.grades-table td {
+  padding: var(--space-4) var(--space-6);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.grades-table th {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grades-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.grades-table tbody tr:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.assignment-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.assignment-date {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.assignment-score {
+  font-weight: 500;
+}
+
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.grade-badge.a {
+  background-color: var(--color-success-light);
+  color: #065f46;
+}
+
+.grade-badge.b {
+  background-color: var(--color-info-light);
+  color: #1e40af;
+}
+
+.grade-badge.c {
+  background-color: var(--color-warning-light);
+  color: #92400e;
+}
+
+.grade-badge.d {
+  background-color: var(--color-error-light);
+  color: #991b1b;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .grades-overview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grades-table th:nth-child(2),
+  .grades-table td:nth-child(2) {
+    display: none;
+  }
+
+  .grades-table th,
+  .grades-table td {
+    padding: var(--space-3) var(--space-4);
+  }
+}

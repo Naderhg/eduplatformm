@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Test</title>
+</head>
+<body>
+    <h1>Video Test</h1>
+    <p>Test video playback with authentication token</p>
+    
+    <div>
+        <h2>Test Video</h2>
+        <video controls width="400">
+            <source src="http://localhost:5000/api/files/videos/video-1767988917025-64527657.mp4?token=YOUR_TOKEN_HERE" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        // Get token from localStorage if available
+        const token = localStorage.getItem('token');
+        if (token) {
+            const video = document.querySelector('video source');
+            video.src = video.src.replace('YOUR_TOKEN_HERE', token);
+            console.log('Updated video URL with token:', video.src);
+        } else {
+            console.log('No token found in localStorage');
+        }
+    </script>
+</body>
+</html>

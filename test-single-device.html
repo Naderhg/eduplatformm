@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Device Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Single Device Login Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Student Single Device Restriction</h2>
+        <p>This test will verify that students can only login on one device at a time.</p>
+        
+        <button onclick="testStudentLogin()">Test Student Login (Device 1)</button>
+        <button onclick="testStudentLoginSecondDevice()">Test Student Login (Device 2)</button>
+        <button onclick="testTeacherLogin()">Test Teacher Login (No Restriction)</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let currentToken = null;
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+        }
+
+        async function makeRequest(endpoint, method = 'POST', data = {}) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                return { success: response.ok, data: result, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testStudentLogin() {
+            addResult('Testing student login from device 1...', 'info');
+            
+            // First login attempt
+            const result = await makeRequest('/auth/login', 'POST', {
+                email: 'student@test.com',
+                password: 'password123'
+            });
+            
+            if (result.success) {
+                currentToken = result.data.token;
+                addResult('✓ Student login successful on device 1', 'success');
+                addResult(`Token: ${result.data.token.substring(0, 50)}...`, 'info');
+            } else {
+                addResult(`✗ Login failed: ${result.data.message || result.error}`, 'error');
+            }
+        }
+
+        async function testStudentLoginSecondDevice() {
+            addResult('Testing student login from device 2 (should be blocked)...', 'info');
+            
+            // Simulate second device login (same credentials, different device)
+            const result = await makeRequest('/auth/login', 'POST', {
+                email: 'student@test.com',
+                password: 'password123'
+            });
+            
+            if (result.success) {
+                addResult('✗ ERROR: Second device login succeeded (should be blocked!)', 'error');
+            } else {
+                if (result.status === 409) {
+                    addResult('✓ Second device login correctly blocked', 'success');
+                    addResult(`Message: ${result.data.message}`, 'info');
+                } else {
+                    addResult(`✗ Unexpected error: ${result.data.message || result.error}`, 'error');
+                }
+            }
+        }
+
+        async function testTeacherLogin() {
+            addResult('Testing teacher login (should work on multiple devices)...', 'info');
+            
+            // Teacher login should work regardless of existing sessions
+            const result = await makeRequest('/auth/login', 'POST', {
+                email: 'teacher@test.com',
+                password: 'password123'
+            });
+            
+            if (result.success) {
+                addResult('✓ Teacher login successful (no device restrictions)', 'success');
+                addResult(`Token: ${result.data.token.substring(0, 50)}...`, 'info');
+            } else {
+                addResult(`✗ Teacher login failed: ${result.data.message || result.error}`, 'error');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            currentToken = null;
+        }
+
+        // Instructions
+        addResult('Test Instructions:', 'info');
+        addResult('1. First, create a student account if needed', 'info');
+        addResult('2. Click "Test Student Login (Device 1)" - should succeed', 'info');
+        addResult('3. Click "Test Student Login (Device 2)" - should be blocked', 'info');
+        addResult('4. Click "Test Teacher Login" - should always succeed', 'info');
+    </script>
+</body>
+</html>
