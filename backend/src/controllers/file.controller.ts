@@ -190,10 +190,10 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
         { videoUrl: `/uploads/videos/${filename}` },
         { videoUrl: filename },
         { videoUrl: `uploads/videos/${filename}` },
-        { videoUrl: `http://localhost:5000/uploads/videos/${filename}` },
+        { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
         { videoUrl: `/api/files/videos/${filename}` },
         { videoUrl: `api/files/videos/${filename}` },
-        { videoUrl: `http://localhost:5000/api/files/videos/${filename}` }
+        { videoUrl: `http://localhost:3000/api/files/videos/${filename}` }
       ]
     });
     if (!course) {
@@ -202,10 +202,10 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
       console.log('- /uploads/videos/' + filename);
       console.log('- ' + filename);
       console.log('- uploads/videos/' + filename);
-      console.log('- http://localhost:5000/uploads/videos/' + filename);
+      console.log('- http://localhost:3000/uploads/videos/' + filename);
       console.log('- /api/files/videos/' + filename);
       console.log('- api/files/videos/' + filename);
-      console.log('- http://localhost:5000/api/files/videos/' + filename);
+      console.log('- http://localhost:3000/api/files/videos/' + filename);
       return next(new ErrorResponse('Video not found', 404));
     }
 

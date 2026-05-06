@@ -77,7 +77,7 @@ const essayQuestionSchema = new Schema<IEssayQuestion>({
   maxWords: {
     type: Number,
     min: [50, 'Maximum words must be at least 50'],
-    max: [5000, 'Maximum words cannot exceed 5000']
+    max: [3000, 'Maximum words cannot exceed 3000']
   },
   points: {
     type: Number,

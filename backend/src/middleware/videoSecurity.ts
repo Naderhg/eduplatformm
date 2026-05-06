@@ -6,7 +6,7 @@ export const addVideoSecurityHeaders = (req: Request, res: Response, next: NextF
   const allowedOrigins = [
     'http://localhost:5173', // Vite dev server
     'http://localhost:3000', // Possible production dev server
-    'http://localhost:5000', // Backend itself
+    'http://localhost:3000', // Backend itself
   ];
 
   // Add basic security headers

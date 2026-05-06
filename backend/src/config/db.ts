@@ -32,7 +32,7 @@ process.on('SIGINT', async () => {
 export const connectDB = async (): Promise<void> => {
   try {
     const conn = await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 3000, // Timeout after 5s instead of 30s
     });
     
     console.log(`MongoDB Connected: ${conn.connection.host}`);

@@ -47,7 +47,7 @@ const allowedOrigins = [
   'http://localhost:8081',  // Vite dev server
   'http://localhost:8082',  // Current Vite dev server
   'http://localhost:3000',  // Common React dev server
-  'http://localhost:5000',  // Common React dev server
+  'http://localhost:3000',  // Common React dev server
   process.env.FRONTEND_URL, // Any URL from environment variables
 ].filter(Boolean);
 
@@ -123,7 +123,7 @@ app.use((req, res) => {
 
 // Database connection is already initialized at the top
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
