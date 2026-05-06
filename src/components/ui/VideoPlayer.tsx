@@ -23,11 +23,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
           return `${url}?token=${token}`;
         }
       }
-      // Fix the port if it's wrong (should be 5000 for backend, not frontend port)
-      // Check for any localhost port that's not 5000
+      // Fix the port if it's wrong (should be 3000 for backend, not frontend port)
+      // Check for any localhost port that's not 3000
       const localhostMatch = url.match(/(https?:\/\/)localhost:(\d+)(\/.*)/);
-      if (localhostMatch && localhostMatch[2] !== '5000' && (url.includes('/uploads/') || url.includes('/api/files/'))) {
-        const fixedUrl = url.replace(/localhost:\d+/, 'localhost:5000');
+      if (localhostMatch && localhostMatch[2] !== '3000' && (url.includes('/uploads/') || url.includes('/api/files/'))) {
+        const fixedUrl = url.replace(/localhost:\d+/, 'localhost:3000');
         return fixedUrl;
       }
       return url;
@@ -36,11 +36,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
     // For video files, append authentication token
     if (url.includes('/uploads/videos/') || url.includes('/api/files/videos/')) {
       const token = localStorage.getItem('token');
-      const baseUrl = url.startsWith('/uploads') ? `http://localhost:5000${url}` : url;
+      const baseUrl = url.startsWith('/uploads') ? `http://localhost:3000${url}` : url;
       return token ? `${baseUrl}?token=${token}` : baseUrl;
     }
     
-    if (url.startsWith('/uploads')) return `http://localhost:5000${url}`;
+    if (url.startsWith('/uploads')) return `http://localhost:3000${url}`;
     return url;
   };
 

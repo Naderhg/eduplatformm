@@ -539,7 +539,7 @@ const CreateCourse: React.FC = () => {
               {formData.videoUrl ? (
                 <div className="relative">
                   <video 
-                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `http://localhost:5000${formData.videoUrl}`} 
+                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `http://localhost:3000${formData.videoUrl}`} 
                     controls
                     className="max-h-64 mx-auto rounded-md"
                     controlsList="nodownload"

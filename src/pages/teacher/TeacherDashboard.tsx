@@ -9,7 +9,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './TeacherDashboard.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const TeacherDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -79,7 +79,7 @@ export const TeacherDashboard: React.FC = () => {
 
   return (
     <div className="teacher-dashboard">
-      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('teacher.dashboard.welcome')}, {user?.name?.split(' ')[0]}! 👋</h1>

@@ -16,7 +16,7 @@ const getMediaUrl = (url?: string): string => {
   if (url.startsWith('http')) return url;
   // Handle both /uploads/ and /api/files/ paths
   if (url.startsWith('/uploads/') || url.startsWith('/api/files/')) {
-    return `http://localhost:5000${url}`;
+    return `http://localhost:3000${url}`;
   }
   return url;
 };

@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, Play, Download, BookOpen, User, Clock, FileText } from 'lucide-react';
 import './CourseDetails.css';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'http://localhost:3000';
 
 export const CourseDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
