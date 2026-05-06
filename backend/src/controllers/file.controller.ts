@@ -193,7 +193,7 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
         { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
         { videoUrl: `/api/files/videos/${filename}` },
         { videoUrl: `api/files/videos/${filename}` },
-        { videoUrl: `http://localhost:3000/api/files/videos/${filename}` }
+        { videoUrl: `https://backend-crimson-skylark-5998.fly.dev/api/files/videos/${filename}` }
       ]
     });
     if (!course) {
@@ -205,7 +205,7 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
       console.log('- http://localhost:3000/uploads/videos/' + filename);
       console.log('- /api/files/videos/' + filename);
       console.log('- api/files/videos/' + filename);
-      console.log('- http://localhost:3000/api/files/videos/' + filename);
+      console.log('- https://backend-crimson-skylark-5998.fly.dev/api/files/videos/' + filename);
       return next(new ErrorResponse('Video not found', 404));
     }
 

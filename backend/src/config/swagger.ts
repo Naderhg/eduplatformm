@@ -15,7 +15,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api',
+        url: 'https://backend-crimson-skylark-5998.fly.dev/api',
         description: 'Development server',
       },
     ],

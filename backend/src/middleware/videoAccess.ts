@@ -45,7 +45,7 @@ export const checkVideoAccess = async (req: IOptionalUserRequest, res: Response,
         { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
         { videoUrl: `/api/files/videos/${filename}` },
         { videoUrl: `api/files/videos/${filename}` },
-        { videoUrl: `http://localhost:3000/api/files/videos/${filename}` }
+        { videoUrl: `https://backend-crimson-skylark-5998.fly.dev/api/files/videos/${filename}` }
       ]
     });
 
