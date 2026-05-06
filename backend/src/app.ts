@@ -47,7 +47,7 @@ const allowedOrigins = [
   'http://localhost:8081',  // Vite dev server
   'http://localhost:8082',  // Current Vite dev server
   'http://localhost:3000',  // Common React dev server
-  'http://localhost:3000',  // Common React dev server
+  'http://localhost:5173',  // Vite default dev server
   process.env.FRONTEND_URL, // Any URL from environment variables
 ].filter(Boolean);
 
@@ -61,16 +61,21 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps, curl, postman)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.includes(origin)) {
+    // Check if origin is in allowed list or matches Vercel pattern
+    if (allowedOrigins.includes(origin) || 
+        origin.endsWith('.vercel.app') || 
+        origin.includes('vercel.app')) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
-  // Don't set wildcard origin when credentials are enabled
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Handle preflight requests
