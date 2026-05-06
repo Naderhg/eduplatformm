@@ -48,6 +48,7 @@ const allowedOrigins = [
   'http://localhost:8082',  // Current Vite dev server
   'http://localhost:3000',  // Common React dev server
   'http://localhost:5173',  // Vite default dev server
+  'https://eduu-frontend.vercel.app',  // Your Vercel frontend
   process.env.FRONTEND_URL, // Any URL from environment variables
 ].filter(Boolean);
 
