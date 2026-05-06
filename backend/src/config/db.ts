@@ -1,7 +1,11 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/education-platform';
+// const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/education-platform';
+if (!process.env.MONGODB_URI) {
+  throw new Error("MONGODB_URI is not defined in .env");
+}
 
+const MONGODB_URI = process.env.MONGODB_URI;
 // Enable Mongoose debug mode in development
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);

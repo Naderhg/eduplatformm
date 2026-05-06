@@ -1,7 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
+import dotenv from "dotenv";
+dotenv.config();
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import { connectDB } from './config/db';

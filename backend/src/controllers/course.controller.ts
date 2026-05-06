@@ -21,8 +21,12 @@ export const createCourse = asyncHandler(async (req: IUserRequest, res: Response
     if (req.body.category) {
       console.log('Category value:', JSON.stringify(req.body.category));
       console.log('Category length:', req.body.category.length);
-      console.log('Category char codes:', Array.from(req.body.category).map(char => char.charCodeAt(0)));
-    }
+console.log(
+  'Category char codes:',
+  Array.from(req.body.category as string).map((char: string) =>
+    char.charCodeAt(0)
+  )
+);    }
     
     // Add user to req.body
     req.body.teacher = req.user.id;
