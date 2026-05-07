@@ -48,4 +48,47 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+// Create a separate instance for file uploads with longer timeout
+export const uploadInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 60000, // 60 seconds for file uploads
+  headers: {
+    'Content-Type': 'multipart/form-data',
+    'Accept': 'application/json',
+  },
+  withCredentials: true,
+});
+
+// Add request interceptor for upload instance
+uploadInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for upload instance
+uploadInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('Upload Error:', error);
+    
+    if (error.response?.data?.message) {
+      const errorMessage = error.response.data.message;
+      console.error('Backend Upload Error Message:', errorMessage);
+      error.message = errorMessage;
+    } else if (error.code === 'ECONNABORTED') {
+      error.message = 'Upload timeout. Please try again with a smaller file or check your connection.';
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export default axiosInstance;

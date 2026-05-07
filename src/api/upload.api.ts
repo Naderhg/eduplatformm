@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance, { uploadInstance } from './axios';
 
 export interface UploadResponse {
   success: boolean;
@@ -21,11 +21,7 @@ export const uploadApi = {
     const formData = new FormData();
     formData.append('video', file);
     
-    const response = await axiosInstance.post('/courses/upload/video', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await uploadInstance.post('/courses/upload/video', formData);
     
     return response.data;
   },
@@ -34,11 +30,7 @@ export const uploadApi = {
     const formData = new FormData();
     formData.append('thumbnail', file);
     
-    const response = await axiosInstance.post('/courses/upload/thumbnail', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await uploadInstance.post('/courses/upload/thumbnail', formData);
     
     return response.data;
   },
@@ -49,11 +41,7 @@ export const uploadApi = {
       formData.append('files', file);
     });
     
-    const response = await axiosInstance.post('/courses/upload/files', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await uploadInstance.post('/courses/upload/files', formData);
     
     return response.data;
   },
