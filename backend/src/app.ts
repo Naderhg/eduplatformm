@@ -41,7 +41,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-// CORS configuration
+// CORS configuration - Updated for Vercel and localhost
 const allowedOrigins = [
   'http://localhost:8080',  // Common React dev server
   'http://localhost:8081',  // Vite dev server
