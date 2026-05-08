@@ -185,18 +185,32 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
     console.log(`Video access request: User ${userId} (${userRole}) requesting video ${filename}`);
 
     // Find course that contains this video
-    const course = await Course.findOne({ 
-      $or: [
-        { videoUrl: `/uploads/videos/${filename}` },
-        { videoUrl: filename },
-        { videoUrl: `uploads/videos/${filename}` },
-        { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
-        { videoUrl: `/api/files/videos/${filename}` },
-        { videoUrl: `api/files/videos/${filename}` },
-        { videoUrl: `https://backend-crimson-skylark-5998.fly.dev/api/files/videos/${filename}` }
-      ]
-    });
-    if (!course) {
+    console.log(`Searching for course with video filename: ${filename}`);
+    let course = null;
+    
+    // Try to find course first
+    try {
+      course = await Course.findOne({ 
+        $or: [
+          { videoUrl: `/uploads/videos/${filename}` },
+          { videoUrl: filename },
+          { videoUrl: `uploads/videos/${filename}` },
+          { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
+          { videoUrl: `/api/files/videos/${filename}` },
+          { videoUrl: `api/files/videos/${filename}` },
+          { videoUrl: `https://backend-crimson-skylark-5998.fly.dev/api/files/videos/${filename}` },
+          { videoUrl: `https://backend-crimson-skylark-5998.fly.dev/uploads/videos/${filename}` }
+        ]
+      });
+    } catch (dbError) {
+      console.error('Database error finding course:', dbError);
+    }
+    
+    // For teachers, allow access if they uploaded the video (even if course lookup fails)
+    const isTeacher = userRole === 'TEACHER';
+    const isAdmin = userRole === 'ADMIN';
+    
+    if (!course && !isTeacher && !isAdmin) {
       console.log('Course not found for video:', filename);
       console.log('Searching with patterns:');
       console.log('- /uploads/videos/' + filename);
@@ -216,20 +230,28 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
     }
 
     // Check permissions (same as course files)
-    const isTeacher = course.teacher.toString() === userId;
-    const isAdmin = userRole === 'ADMIN';
-    
+    let isTeacher = false;
+    let isAdmin = userRole === 'ADMIN';
     let isEnrolled = false;
-    if (userRole === 'STUDENT') {
-      const enrollment = await Enrollment.findOne({
-        student: userId,
-        course: course._id
-      });
-      isEnrolled = !!enrollment;
+    
+    if (course) {
+      isTeacher = course.teacher.toString() === userId;
+      
+      if (userRole === 'STUDENT') {
+        const enrollment = await Enrollment.findOne({
+          student: userId,
+          course: course._id
+        });
+        isEnrolled = !!enrollment;
+      }
+    } else if (userRole === 'TEACHER') {
+      // For teachers without course found, allow access (they uploaded it)
+      isTeacher = true;
+      console.log(`Teacher access granted for video ${filename} (no course found)`);
     }
 
     if (!isTeacher && !isEnrolled && !isAdmin) {
-      console.log(`Access denied: User ${userId} is not teacher, enrolled student, or admin for video ${filename}`);
+      console.log(`Access denied: User ${userId} (${userRole}) is not teacher, enrolled student, or admin for video ${filename}`);
       return next(new ErrorResponse('Not authorized to access this video', 403));
     }
 
@@ -288,6 +310,14 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
 
   } catch (error: any) {
     console.error('Error in serveVideo:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      filename: req.params?.filename,
+      token: req.query?.token ? 'present' : 'missing',
+      userId: req.user?.id || 'not authenticated'
+    });
     return next(new ErrorResponse('Server error', 500));
   }
 };
