@@ -31,6 +31,9 @@ export interface IAssignment extends Document {
   teacher: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+  // Virtual fields
+  submissions?: any[];
+  submissionsCount?: number;
 }
 
 const mcqQuestionSchema = new Schema<IMCQQuestion>({
