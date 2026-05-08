@@ -91,6 +91,16 @@ app.use('/api/students', studentRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/comments', commentRoutes);
 
+// Debug endpoint to test CORS
+app.get('/api/debug', (req, res) => {
+  res.json({ 
+    message: 'CORS debug endpoint',
+    timestamp: new Date().toISOString(),
+    headers: req.headers,
+    origin: req.get('Origin')
+  });
+});
+
 // Only serve thumbnails publicly (for course previews)
 app.use('/uploads/thumbnails', express.static(path.join(__dirname, '../uploads/thumbnails')));
 
