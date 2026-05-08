@@ -15,7 +15,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'https://p01--edu-platform--fnj72wsf9xl6.code.run/api',
+        url: 'https://deev--edu-platform--fnj72wsf9xl6.code.run/api',
         description: 'Development server',
       },
     ],

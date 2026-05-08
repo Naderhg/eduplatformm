@@ -382,7 +382,7 @@ export const uploadVideoFile = asyncHandler(async (req: IUserRequest, res: Respo
     const filePath = `/uploads/videos/${req.file.filename}`;
     // Generate secure URL with production backend URL
     const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://p01--edu-platform--fnj72wsf9xl6.code.run'
+      ? 'https://deev--edu-platform--fnj72wsf9xl6.code.run'
       : `http://localhost:${process.env.PORT || 3000}`;
     const secureUrl = `${baseUrl}/api/files/videos/${req.file.filename}`;
     
@@ -415,7 +415,7 @@ export const uploadThumbnailFile = asyncHandler(async (req: IUserRequest, res: R
     const filePath = `/uploads/thumbnails/${req.file.filename}`;
     // Generate secure URL with production backend URL
     const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://p01--edu-platform--fnj72wsf9xl6.code.run'
+      ? 'https://deev--edu-platform--fnj72wsf9xl6.code.run'
       : `http://localhost:${process.env.PORT || 3000}`;
     const secureUrl = `${baseUrl}/api/files/thumbnails/${req.file.filename}`;
     
@@ -446,7 +446,7 @@ export const uploadCourseFiles = asyncHandler(async (req: IUserRequest, res: Res
 
     // Return the file paths that can be stored in database
     const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://p01--edu-platform--fnj72wsf9xl6.code.run'
+      ? 'https://deev--edu-platform--fnj72wsf9xl6.code.run'
       : `http://localhost:${process.env.PORT || 3000}`;
     
     const files = (req.files as Express.Multer.File[]).map(file => ({
