@@ -45,7 +45,7 @@ export const checkVideoAccess = async (req: IOptionalUserRequest, res: Response,
         { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
         { videoUrl: `/api/files/videos/${filename}` },
         { videoUrl: `api/files/videos/${filename}` },
-        { videoUrl: `http://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` }
+        { videoUrl: `https://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` }
       ]
     });
 

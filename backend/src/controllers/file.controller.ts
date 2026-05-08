@@ -198,8 +198,8 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
           { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
           { videoUrl: `/api/files/videos/${filename}` },
           { videoUrl: `api/files/videos/${filename}` },
-          { videoUrl: `http://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` },
-          { videoUrl: `http://p01--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` }
+          { videoUrl: `https://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` },
+          { videoUrl: `https://p01--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` }
         ]
       });
     } catch (dbError) {
@@ -243,7 +243,7 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
       console.log('- http://localhost:3000/uploads/videos/' + filename);
       console.log('- /api/files/videos/' + filename);
       console.log('- api/files/videos/' + filename);
-      console.log('- http://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/' + filename);
+      console.log('- https://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/' + filename);
       return next(new ErrorResponse('Video not found', 404));
     }
 
