@@ -1,0 +1,28 @@
+// Fix for getAssignmentSubmissionsWithRankings function
+// Replace lines 418-427 in backend/src/controllers/submission.controller.ts
+
+// OLD CODE:
+// Add rankings to submissions
+const submissionsWithRankings = submissions.map((submission, index) => {
+  return {
+    ...submission.toObject(),
+    rank: index + 1,
+    percentageScore: submission.score && assignment.maxScore > 0 
+      ? Math.round((submission.score / assignment.maxScore) * 100) 
+      : 0
+  };
+});
+
+// NEW CODE:
+// Add rankings to submissions
+const submissionsWithRankings = submissions.map((submission, index) => {
+  const submissionObj = submission.toObject();
+  return {
+    ...submissionObj,
+    id: submission._id, // Transform _id to id for frontend compatibility
+    rank: index + 1,
+    percentageScore: submission.score && assignment.maxScore > 0 
+      ? Math.round((submission.score / assignment.maxScore) * 100) 
+      : 0
+  };
+});

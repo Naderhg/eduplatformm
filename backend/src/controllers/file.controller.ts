@@ -199,7 +199,7 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
           { videoUrl: `/api/files/videos/${filename}` },
           { videoUrl: `api/files/videos/${filename}` },
           { videoUrl: `https://p01--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` },
-          { videoUrl: `https://backend-crimson-skylark-5998.fly.dev/uploads/videos/${filename}` }
+          { videoUrl: `https://p01--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` }
         ]
       });
     } catch (dbError) {

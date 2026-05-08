@@ -15,7 +15,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
 
   const getFullUrl = (url: string): string => {
     // Get the API base URL from environment or fallback to production
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://backend-crimson-skylark-5998.fly.dev/api';
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://p01--edu-platform--fnj72wsf9xl6.code.run/api';
     const backendBaseUrl = apiBaseUrl.replace('/api', '');
     
     if (url.startsWith('http')) {

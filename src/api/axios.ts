@@ -1,7 +1,7 @@
 // src/api/axios.ts
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend-crimson-skylark-5998.fly.dev/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://p01--edu-platform--fnj72wsf9xl6.code.run/api';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

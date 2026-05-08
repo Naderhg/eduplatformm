@@ -539,7 +539,7 @@ const CreateCourse: React.FC = () => {
               {formData.videoUrl ? (
                 <div className="relative">
                   <video 
-                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `${(import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://backend-crimson-skylark-5998.fly.dev')}${formData.videoUrl}`} 
+                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `${(import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://p01--edu-platform--fnj72wsf9xl6.code.run')}${formData.videoUrl}`} 
                     controls
                     className="max-h-64 mx-auto rounded-md"
                     controlsList="nodownload"
