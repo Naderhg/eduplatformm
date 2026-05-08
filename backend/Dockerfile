@@ -42,4 +42,7 @@ COPY --from=build /app /app
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD [ "npm", "run", "start" ]
+# Set working directory
+WORKDIR /app
+# Start the server
+CMD node dist/app.js
