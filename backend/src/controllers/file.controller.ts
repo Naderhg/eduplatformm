@@ -206,23 +206,6 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
       console.error('Database error finding course:', dbError);
     }
     
-    // For teachers, allow access if they uploaded the video (even if course lookup fails)
-    const isTeacher = userRole === 'TEACHER';
-    const isAdmin = userRole === 'ADMIN';
-    
-    if (!course && !isTeacher && !isAdmin) {
-      console.log('Course not found for video:', filename);
-      console.log('Searching with patterns:');
-      console.log('- /uploads/videos/' + filename);
-      console.log('- ' + filename);
-      console.log('- uploads/videos/' + filename);
-      console.log('- http://localhost:3000/uploads/videos/' + filename);
-      console.log('- /api/files/videos/' + filename);
-      console.log('- api/files/videos/' + filename);
-      console.log('- https://backend-crimson-skylark-5998.fly.dev/api/files/videos/' + filename);
-      return next(new ErrorResponse('Video not found', 404));
-    }
-
     // If no user authentication, deny access
     if (!userId || !userRole) {
       console.log(`Access denied: No authentication for video ${filename}`);
@@ -231,7 +214,7 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
 
     // Check permissions (same as course files)
     let isTeacher = false;
-    let isAdmin = userRole === 'ADMIN';
+    const isAdmin = userRole === 'ADMIN';
     let isEnrolled = false;
     
     if (course) {
@@ -248,6 +231,20 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
       // For teachers without course found, allow access (they uploaded it)
       isTeacher = true;
       console.log(`Teacher access granted for video ${filename} (no course found)`);
+    }
+    
+    // If no course found and not teacher/admin, deny access
+    if (!course && !isTeacher && !isAdmin) {
+      console.log('Course not found for video:', filename);
+      console.log('Searching with patterns:');
+      console.log('- /uploads/videos/' + filename);
+      console.log('- ' + filename);
+      console.log('- uploads/videos/' + filename);
+      console.log('- http://localhost:3000/uploads/videos/' + filename);
+      console.log('- /api/files/videos/' + filename);
+      console.log('- api/files/videos/' + filename);
+      console.log('- https://backend-crimson-skylark-5998.fly.dev/api/files/videos/' + filename);
+      return next(new ErrorResponse('Video not found', 404));
     }
 
     if (!isTeacher && !isEnrolled && !isAdmin) {
