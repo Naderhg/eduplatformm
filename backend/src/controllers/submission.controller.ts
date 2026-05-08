@@ -415,16 +415,19 @@ export const getAssignmentSubmissionsWithRankings = async (req: AuthRequest, res
       .populate('student', 'name email avatar')
       .sort({ score: -1, submittedAt: 1 }); // Sort by score descending, then by submission time ascending
 
-    // Add rankings to submissions
-    const submissionsWithRankings = submissions.map((submission, index) => {
-      return {
-        ...submission.toObject(),
-        rank: index + 1,
-        percentageScore: submission.score && assignment.maxScore > 0 
-          ? Math.round((submission.score / assignment.maxScore) * 100) 
-          : 0
-      };
-    });
+ // Add rankings to submissions
+const submissionsWithRankings = submissions.map((submission, index) => {
+  const submissionObj = submission.toObject();
+  return {
+    ...submissionObj,
+    id: submission._id, // Transform _id to id for frontend compatibility
+    rank: index + 1,
+    percentageScore: submission.score && assignment.maxScore > 0 
+      ? Math.round((submission.score / assignment.maxScore) * 100) 
+      : 0
+  };
+});
+
 
     res.json({
       success: true,
