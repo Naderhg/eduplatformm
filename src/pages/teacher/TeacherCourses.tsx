@@ -11,12 +11,14 @@ import { toast } from 'react-toastify';
 import './TeacherCourses.css';
 
 // Helper function to get full URL for media files
-const getMediaUrl = (url?: string): string => {
+const getMediaUrl = (url: string): string => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   // Handle both /uploads/ and /api/files/ paths
   if (url.startsWith('/uploads/') || url.startsWith('/api/files/')) {
-    return `http://localhost:3000${url}`;
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://backend-crimson-skylark-5998.fly.dev/api';
+    const backendBaseUrl = apiBaseUrl.replace('/api', '');
+    return `${backendBaseUrl}${url}`;
   }
   return url;
 };

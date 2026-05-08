@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, Play, Download, BookOpen, User, Clock, FileText } from 'lucide-react';
 import './CourseDetails.css';
 
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://backend-crimson-skylark-5998.fly.dev';
 
 export const CourseDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();

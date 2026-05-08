@@ -14,6 +14,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
   if (!isOpen) return null;
 
   const getFullUrl = (url: string): string => {
+    // Get the API base URL from environment or fallback to production
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://backend-crimson-skylark-5998.fly.dev/api';
+    const backendBaseUrl = apiBaseUrl.replace('/api', '');
+    
     if (url.startsWith('http')) {
       // If it's already a full URL, check if it needs a token
       if (url.includes('/uploads/videos/') || url.includes('/api/files/videos/')) {
@@ -23,24 +27,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
           return `${url}?token=${token}`;
         }
       }
-      // Fix the port if it's wrong (should be 3000 for backend, not frontend port)
-      // Check for any localhost port that's not 3000
-      const localhostMatch = url.match(/(https?:\/\/)localhost:(\d+)(\/.*)/);
-      if (localhostMatch && localhostMatch[2] !== '3000' && (url.includes('/uploads/') || url.includes('/api/files/'))) {
-        const fixedUrl = url.replace(/localhost:\d+/, 'localhost:3000');
-        return fixedUrl;
-      }
       return url;
     }
     
     // For video files, append authentication token
     if (url.includes('/uploads/videos/') || url.includes('/api/files/videos/')) {
       const token = localStorage.getItem('token');
-      const baseUrl = url.startsWith('/uploads') ? `http://localhost:3000${url}` : url;
+      const baseUrl = url.startsWith('/uploads') ? `${backendBaseUrl}${url}` : url;
       return token ? `${baseUrl}?token=${token}` : baseUrl;
     }
     
-    if (url.startsWith('/uploads')) return `http://localhost:3000${url}`;
+    if (url.startsWith('/uploads')) return `${backendBaseUrl}${url}`;
     return url;
   };
 
