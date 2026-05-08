@@ -261,7 +261,7 @@ export const getStudentAssignments = async (req: AuthRequest, res: Response) => 
     // Transform assignments to include proper submission structure
     const transformedAssignments = assignments.map(assignment => ({
       ...assignment.toObject(),
-      submissions: [] // Initialize empty submissions array
+      submissions: assignment.submissions || [] // Keep populated submissions or use empty array
     }));
 
     res.json(transformedAssignments);
