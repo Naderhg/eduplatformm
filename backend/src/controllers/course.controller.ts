@@ -380,8 +380,11 @@ export const uploadVideoFile = asyncHandler(async (req: IUserRequest, res: Respo
 
     // Return the file path that can be stored in database
     const filePath = `/uploads/videos/${req.file.filename}`;
-    //This new path
-    const secureUrl = `/api/files/videos/${req.file.filename}`;
+    // Generate secure URL with production backend URL
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://backend-crimson-skylark-5998.fly.dev'
+      : `http://localhost:${process.env.PORT || 3000}`;
+    const secureUrl = `${baseUrl}/api/files/videos/${req.file.filename}`;
     
     res.status(200).json({
       success: true,
@@ -410,8 +413,11 @@ export const uploadThumbnailFile = asyncHandler(async (req: IUserRequest, res: R
 
     // Return the file path that can be stored in database
     const filePath = `/uploads/thumbnails/${req.file.filename}`;
-    //This new path
-    const secureUrl = `/api/files/thumbnails/${req.file.filename}`;
+    // Generate secure URL with production backend URL
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://backend-crimson-skylark-5998.fly.dev'
+      : `http://localhost:${process.env.PORT || 3000}`;
+    const secureUrl = `${baseUrl}/api/files/thumbnails/${req.file.filename}`;
     
     res.status(200).json({
       success: true,
@@ -439,12 +445,16 @@ export const uploadCourseFiles = asyncHandler(async (req: IUserRequest, res: Res
     }
 
     // Return the file paths that can be stored in database
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://backend-crimson-skylark-5998.fly.dev'
+      : `http://localhost:${process.env.PORT || 3000}`;
+    
     const files = (req.files as Express.Multer.File[]).map(file => ({
       filename: file.filename,
       originalName: file.originalname,
       size: file.size,
       mimetype: file.mimetype,
-      url: file.filename // Store only the filename, not the full path
+      url: `${baseUrl}/api/files/course/${file.filename}` // Generate full URL for course files
     }));
     
     res.status(200).json({
