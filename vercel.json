@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://p01--edu-platform--fnj72wsf9xl6.code.run/api/$1",
+      "dest": "https://deev--edu-platform--fnj72wsf9xl6.code.run/api/$1",
       "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     },
     {
@@ -21,6 +21,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://p01--edu-platform--fnj72wsf9xl6.code.run/api"
+    "VITE_API_URL": "https://deev--edu-platform--fnj72wsf9xl6.code.run/api"
   }
 }

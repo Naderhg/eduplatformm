@@ -27,6 +27,9 @@ RUN npm ci --include=dev
 # Copy application code
 COPY . .
 
+# Copy CORS test file
+COPY test-cors.js test-cors.js
+
 # Build application
 RUN npm run build
 
@@ -42,4 +45,7 @@ COPY --from=build /app /app
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD [ "npm", "run", "start" ]
+# Set working directory
+WORKDIR /app
+# Temporarily use CORS test
+CMD [ "node", "test-cors.js" ]

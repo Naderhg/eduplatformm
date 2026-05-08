@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, Play, Download, BookOpen, User, Clock, FileText } from 'lucide-react';
 import './CourseDetails.css';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://p01--edu-platform--fnj72wsf9xl6.code.run';
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://deev--edu-platform--fnj72wsf9xl6.code.run';
 
 export const CourseDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();

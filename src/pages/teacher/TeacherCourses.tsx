@@ -16,7 +16,7 @@ const getMediaUrl = (url: string): string => {
   if (url.startsWith('http')) return url;
   // Handle both /uploads/ and /api/files/ paths
   if (url.startsWith('/uploads/') || url.startsWith('/api/files/')) {
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://p01--edu-platform--fnj72wsf9xl6.code.run/api';
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://deev--edu-platform--fnj72wsf9xl6.code.run/api';
     const backendBaseUrl = apiBaseUrl.replace('/api', '');
     return `${backendBaseUrl}${url}`;
   }
