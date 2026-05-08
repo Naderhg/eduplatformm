@@ -122,10 +122,10 @@ const assignmentSchema = new Schema<IAssignment>({
     required: [true, 'Due date is required'],
     validate: {
       validator: function(this: IAssignment, value: Date) {
-        // Due date must be at least 30 minutes from now
-        return value > new Date(Date.now() + 30 * 60 * 1000);
+        // Due date must be at least 5 minutes from now (more flexible)
+        return value > new Date(Date.now() + 5 * 60 * 1000);
       },
-      message: 'Due date must be at least 30 minutes in the future'
+      message: 'Due date must be at least 5 minutes in the future'
     }
   },
   maxScore: {
