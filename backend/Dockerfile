@@ -46,11 +46,11 @@ COPY --from=build /app /app
 
 # Verify files exist in final stage
 RUN ls -la dist/
-RUN ls -la dist/app.js
+RUN ls -la app.js
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 # Set working directory
 WORKDIR /app
 # Start the server
-CMD node dist/app.js
+CMD node dist/app.js || node dist/app.js
