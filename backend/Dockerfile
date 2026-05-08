@@ -27,9 +27,6 @@ RUN npm ci --include=dev
 # Copy application code
 COPY . .
 
-# Copy CORS test file
-COPY test-cors.js test-cors.js
-
 # Build application
 RUN npm run build
 
@@ -47,5 +44,4 @@ COPY --from=build /app /app
 EXPOSE 3000
 # Set working directory
 WORKDIR /app
-# Temporarily use CORS test
-CMD [ "node", "test-cors.js" ]
+CMD [ "npm", "run", "start" ]
