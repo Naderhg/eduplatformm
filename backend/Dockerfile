@@ -12,6 +12,7 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 
+
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
@@ -32,16 +33,13 @@ RUN npm run build
 # Remove development dependencies
 RUN npm prune --omit=dev
 
+
 # Final stage for app image
 FROM base
 
 # Copy built application
 COPY --from=build /app /app
 
-# Start of server by default, this can be overwritten at runtime
+# Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-# Set working directory
-WORKDIR /app
-
-# Start the server
-CMD node dist/app.js
+CMD [ "npm", "run", "start" ]
