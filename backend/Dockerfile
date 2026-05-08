@@ -30,6 +30,10 @@ COPY . .
 # Build application
 RUN npm run build
 
+# Verify build output
+RUN ls -la dist/
+RUN ls -la dist/app.js
+
 # Remove development dependencies
 RUN npm prune --omit=dev
 
@@ -39,6 +43,10 @@ FROM base
 
 # Copy built application
 COPY --from=build /app /app
+
+# Verify files exist in final stage
+RUN ls -la dist/
+RUN ls -la dist/app.js
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
