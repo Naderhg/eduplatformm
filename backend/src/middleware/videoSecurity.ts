@@ -13,17 +13,17 @@ export const addVideoSecurityHeaders = (req: Request, res: Response, next: NextF
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   
-  // Add CORS headers for allowed origins
-  if (origin && allowedOrigins.includes(origin)) {
+  // Add CORS headers for all origins
+  if (origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, Accept');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else if (!origin) {
+  } else {
     // Allow requests without Origin header (like direct video element requests)
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, Accept');
   }
 
   next();
