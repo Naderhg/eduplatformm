@@ -38,31 +38,7 @@ connectDB().catch(err => {
 
 const app = express();
 
-// CORS middleware - MUST be first middleware
-app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
-  exposedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
-
-// Handle preflight requests explicitly
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, Accept');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.send(204);
-});
-
-// Middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// CORS configuration - Updated for Vercel and localhost
+// Define allowed origins BEFORE CORS config
 const allowedOrigins = [
   'http://localhost:8080',  // Common React dev server
   'http://localhost:8081',  // Vite dev server
@@ -72,6 +48,34 @@ const allowedOrigins = [
   'https://eduu-frontend.vercel.app',  // Your Vercel frontend
   process.env.FRONTEND_URL, // Any URL from environment variables
 ].filter(Boolean);
+
+// CORS configuration - Dynamic origin handling for credentials
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // For development, allow all origins
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204
+};
+
+// CORS middleware - MUST be first middleware
+app.use(cors(corsOptions));
+
+// Middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(morgan('dev'));
 
