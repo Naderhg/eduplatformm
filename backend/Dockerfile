@@ -20,12 +20,12 @@ FROM base AS build
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
 
-# Install node modules
-COPY package-lock.json package.json ./
+# Install node modules - use backend folder
+COPY backend/package-lock.json backend/package.json ./
 RUN npm ci --include=dev
 
-# Copy application code
-COPY . .
+# Copy application code from backend folder
+COPY backend/ .
 
 # Build application
 RUN npm run build
