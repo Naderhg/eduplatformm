@@ -28,6 +28,7 @@ import { StudentAssignments } from './pages/student/StudentAssignments';
 import { AssignmentDetail } from './pages/student/AssignmentDetail';
 import { AssignmentResults } from './pages/student/AssignmentResults';
 import { StudentGrades } from './pages/student/StudentGrades';
+import { Certificate } from './pages/student/Certificate';
 
 // Styles
 import './styles/global.css';
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="assignments/:id" element={<AssignmentDetail />} />
           <Route path="assignments/:id/results" element={<AssignmentResults />} />
+          <Route path="assignments/:id/certificate" element={<Certificate />} />
           <Route path="grades" element={<StudentGrades />} />
         </Route>
 

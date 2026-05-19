@@ -57,10 +57,12 @@ export const createAssignment = async (req: AuthRequest, res: Response) => {
       availableFrom,
       dueDate,
       type,
-      questions
+      questions,
+      certificateEnabled,
+      certificatePassingScore
     } = req.body;
 
-    console.log('Extracted data:', { title, description, courseId, lesson, availableFrom, dueDate, type, questions });
+    console.log('Extracted data:', { title, description, courseId, lesson, availableFrom, dueDate, type, questions, certificateEnabled, certificatePassingScore });
 
     // Verify course exists and user is teacher (only if courseId is provided)
     let course = null;
@@ -110,6 +112,8 @@ export const createAssignment = async (req: AuthRequest, res: Response) => {
       dueDate: new Date(dueDate),
       type,
       questions,
+      certificateEnabled,
+      certificatePassingScore,
       teacher: req.user!.id
     };
 

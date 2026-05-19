@@ -257,6 +257,11 @@ export const AssignmentSubmissions: React.FC = () => {
                         {submission.score !== undefined ? submission.score : 'Not graded'}
                       </span>
                       <span className="max-score text-sm sm:text-base text-muted-foreground font-medium">/ {assignment.maxScore}</span>
+                      {assignment?.certificateEnabled && 
+                       submission.score !== undefined && 
+                       Math.round((submission.score / (assignment?.maxScore || 1)) * 100) >= (assignment?.certificatePassingScore || 50) && (
+                        <span title="Certificate earned" style={{ marginLeft: '8px', fontSize: '1.25rem' }}>🏅</span>
+                      )}
                     </div>
                     {submission.score !== undefined && (
                       <div className="percentage text-base sm:text-lg font-semibold px-3 py-1 bg-success text-success-foreground rounded-md">

@@ -27,6 +27,8 @@ export interface IAssignment extends Document {
     essay?: IEssayQuestion[];
   };
   autoCorrect: boolean;
+  certificateEnabled: boolean;
+  certificatePassingScore: number;
   status: 'draft' | 'published' | 'closed';
   teacher: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -150,6 +152,16 @@ const assignmentSchema = new Schema<IAssignment>({
   autoCorrect: {
     type: Boolean,
     default: false
+  },
+  certificateEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  certificatePassingScore: {
+    type: Number,
+    default: 50,
+    min: [0, 'Passing score cannot be less than 0'],
+    max: [100, 'Passing score cannot be more than 100'],
   },
   status: {
     type: String,

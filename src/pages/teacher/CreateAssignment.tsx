@@ -39,6 +39,8 @@ export const CreateAssignment: React.FC = () => {
   const [availableFrom, setAvailableFrom] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [maxScore, setMaxScore] = useState(100);
+  const [certificateEnabled, setCertificateEnabled] = useState(false);
+  const [certificatePassingScore, setCertificatePassingScore] = useState(50);
   
   // Questions
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([]);
@@ -181,7 +183,9 @@ export const CreateAssignment: React.FC = () => {
           mcq: mcqQuestions.map(({ id, ...q }) => q), // Remove id field
           essay: essayQuestions.map(({ id, ...q }) => q) // Remove id field
         },
-        autoCorrect: assignmentType === 'mcq' || assignmentType === 'mixed'
+        autoCorrect: assignmentType === 'mcq' || assignmentType === 'mixed',
+        certificateEnabled,
+        certificatePassingScore
       };
 
       // Only include courseId if it exists
@@ -465,6 +469,45 @@ export const CreateAssignment: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Certificate Settings */}
+        <div className="certificate-section card">
+          <h2 className="section-title">🎓 Certificate Settings</h2>
+          <p className="section-description" style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', marginBottom: '1rem' }}>
+            Enable certificates for students who pass this assignment.
+          </p>
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <label className="toggle-label" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 500, fontSize: '0.95rem' }}>
+              <input
+                type="checkbox"
+                checked={certificateEnabled}
+                onChange={(e) => setCertificateEnabled(e.target.checked)}
+                className="toggle-input"
+                style={{ width: 'auto', marginRight: '0.5rem' }}
+              />
+              Enable Certificate
+            </label>
+          </div>
+          {certificateEnabled && (
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+              <label htmlFor="certificatePassingScore">Minimum Passing Score (%)</label>
+              <input
+                type="number"
+                id="certificatePassingScore"
+                min="0"
+                max="100"
+                value={certificatePassingScore}
+                onChange={(e) => setCertificatePassingScore(Number(e.target.value))}
+                className="form-input"
+                style={{ maxWidth: '200px' }}
+                required
+              />
+              <span className="form-hint" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.25rem' }}>
+                Students scoring at or above this percentage will receive a certificate.
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Submit Button */}
         <div className="form-actions">

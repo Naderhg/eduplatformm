@@ -154,6 +154,22 @@ export const AssignmentResults: React.FC = () => {
           )}
         </div>
 
+        {assignment.certificateEnabled && totalScore !== undefined && (
+          Math.round((totalScore / assignment.maxScore) * 100) >= (assignment.certificatePassingScore || 50)
+        ) && (
+          <div className="certificate-earned bg-card border-2 border-green-500 rounded-lg shadow-sm p-6 text-center border-solid">
+            <div className="text-4xl mb-3">🎓</div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Certificate Earned!</h3>
+            <p className="text-muted-foreground mb-4">Congratulations! You've passed this assignment and earned a certificate.</p>
+            <button
+              onClick={() => navigate(`/student/assignments/${id}/certificate`)}
+              className="btn btn-primary inline-flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              🏆 View Certificate
+            </button>
+          </div>
+        )}
+
         {/* Ranking Summary Table */}
         {rankings.length > 0 && (
           <div className="ranking-summary bg-card border border-border rounded-lg shadow-sm p-4 sm:p-5">

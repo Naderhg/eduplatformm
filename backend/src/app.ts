@@ -15,6 +15,7 @@ import submissionRoutes from './routes/submission.routes';
 import studentRoutes from './routes/student.routes';
 import fileRoutes from './routes/file.routes';
 import commentRoutes from './routes/comment.routes';
+import certificateRoutes from './routes/certificate.routes';
 import { errorHandler, notFound } from './middleware/error';
 import './models/user.model'; // Import the model to ensure it's registered
 import './models/session.model'; // Import the model to ensure it's registered
@@ -94,6 +95,7 @@ app.use('/api/submissions', submissionRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/certificates', certificateRoutes);
 
 // Debug endpoint to test CORS
 app.get('/api/debug', (req, res) => {

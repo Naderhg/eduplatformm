@@ -29,6 +29,8 @@ export interface Assignment {
     essay?: EssayQuestion[];
   };
   autoCorrect?: boolean;
+  certificateEnabled?: boolean;
+  certificatePassingScore?: number;
   status: 'draft' | 'published' | 'closed';
   createdAt: string;
   updatedAt: string;
@@ -217,5 +219,9 @@ export const assignmentsApi = {
 
   getAssignmentPublicRankings: async (assignmentId: string): Promise<any> => {
     return axiosInstance.get(`/submissions/assignment/${assignmentId}/public-rankings`).then(res => res.data);
-  }
+  },
+
+  getCertificateData: async (assignmentId: string): Promise<any> => {
+    return axiosInstance.get(`/certificates/assignment/${assignmentId}`).then(res => res.data);
+  },
 };
