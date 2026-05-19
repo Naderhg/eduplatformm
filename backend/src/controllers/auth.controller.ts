@@ -9,7 +9,7 @@ import { enforceSingleDeviceLogin, createSession, cleanupSession } from '../midd
 // @route   POST /api/auth/register
 // @access  Public
 export const register = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, parentPhone } = req.body;
 
   // Validate input
   if (!name || !email || !password) {
@@ -33,6 +33,7 @@ export const register = asyncHandler(async (req: Request, res: Response, next: N
         email,
         password,
         role: role || 'STUDENT',
+        ...(parentPhone && { parentPhone }),
       });
 
       // Generate token

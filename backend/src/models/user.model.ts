@@ -7,6 +7,7 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   role: 'STUDENT' | 'TEACHER';
+  parentPhone?: string;
   avatar?: string;
   currentSession?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -40,6 +41,24 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ['STUDENT', 'TEACHER'],
       default: 'STUDENT',
+    },
+    parentPhone: {
+      type: String,
+      trim: true,
+      required: [
+        function (this: IUser) {
+          return this.role === 'STUDENT';
+        },
+        'Parent phone number is required for students',
+      ],
+      validate: {
+        validator: function (v: string) {
+          // Allow empty for teachers
+          if (!v && (this as any).role === 'TEACHER') return true;
+          return validator.isMobilePhone(v, 'any', { strictMode: false });
+        },
+        message: 'Please provide a valid phone number',
+      },
     },
     avatar: {
       type: String,

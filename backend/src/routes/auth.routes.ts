@@ -20,6 +20,13 @@ const validateRegister = [
     .optional()
     .isIn(['STUDENT', 'TEACHER'])
     .withMessage('Invalid role'),
+  body('parentPhone')
+    .if(body('role').not().equals('TEACHER'))
+    .trim()
+    .notEmpty()
+    .withMessage('Parent phone number is required for students')
+    .isMobilePhone('any')
+    .withMessage('Please provide a valid phone number'),
   validateRequest,
 ];
 

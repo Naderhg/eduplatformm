@@ -11,6 +11,7 @@ export const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole>('STUDENT');
+  const [parentPhone, setParentPhone] = useState('');
   const [error, setError] = useState('');
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -21,6 +22,11 @@ export const Register: React.FC = () => {
 
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    if (role === 'STUDENT' && !parentPhone.trim()) {
+      setError('Parent phone number is required for students');
       return;
     }
 
@@ -35,7 +41,7 @@ export const Register: React.FC = () => {
     }
 
     try {
-      await register({ name, email, password, role });
+      await register({ name, email, password, role, ...(role === 'STUDENT' && { parentPhone }) });
       navigate(role === 'TEACHER' ? '/teacher' : '/student', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -114,6 +120,21 @@ export const Register: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {role === 'STUDENT' && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="parentPhone">Parent Phone Number</label>
+                <input
+                  type="tel"
+                  id="parentPhone"
+                  className="form-input"
+                  placeholder="Enter parent's phone number"
+                  value={parentPhone}
+                  onChange={(e) => setParentPhone(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label" htmlFor="password">Password</label>

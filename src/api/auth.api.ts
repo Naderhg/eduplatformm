@@ -32,6 +32,7 @@ export interface LoginCredentials {
 export interface RegisterData extends LoginCredentials {
   name: string;
   role: 'TEACHER' | 'STUDENT';
+  parentPhone?: string;
 }
 
 export interface AuthResponse {
