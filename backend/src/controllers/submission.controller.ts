@@ -2,7 +2,9 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Assignment from '../models/assignment.model';
 import Submission from '../models/submission.model';
+import User from '../models/user.model';
 import { AuthRequest } from '../middleware/auth';
+import { sendWhatsAppMessage } from '../services/whatsapp.service';
 
 // @desc    Submit assignment
 // @route   POST /api/assignments/:assignmentId/submit
@@ -157,6 +159,29 @@ export const submitAssignment = async (req: AuthRequest, res: Response) => {
     const savedSubmission = await submission.save();
     await savedSubmission.populate('student', 'name email');
     await savedSubmission.populate('assignment', 'title dueDate maxScore');
+
+    // Send WhatsApp notification to parent
+    try {
+      const student = await User.findById(req.user!.id);
+      if (student && student.parentPhone && student.role === 'STUDENT') {
+        const courseTitle = assignment.course ? 
+          (await Course.findById(assignment.course))?.title || 'Course' : 
+          'Standalone Assignment';
+        
+        const message = `📚 Assignment Submission Alert\n\n` +
+          `Your child ${student.name} has submitted the assignment "${assignment.title}"\n` +
+          `Course: ${courseTitle}\n` +
+          `Submitted: ${new Date().toLocaleString()}\n` +
+          `Score: ${autoGraded ? totalScore + '/' + assignment.maxScore : 'Pending manual grading'}\n\n` +
+          `Thank you for your support!`;
+        
+        await sendWhatsAppMessage(student.parentPhone, message);
+        console.log('WhatsApp notification sent to parent:', student.parentPhone);
+      }
+    } catch (whatsappError: any) {
+      console.error('Failed to send WhatsApp notification:', whatsappError);
+      // Don't fail the submission if WhatsApp fails
+    }
 
     res.status(201).json({
       message: 'Assignment submitted successfully',
