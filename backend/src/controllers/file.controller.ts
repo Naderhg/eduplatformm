@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import Course from '../models/course.model';
 import Enrollment from '../models/enrollment.model';
 import User from '../models/user.model';
+import Lesson from '../models/lesson.model';
 import ErrorResponse from '../utils/errorResponse';
 import path from 'path';
 import fs from 'fs';
@@ -152,9 +153,6 @@ export const serveThumbnail = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-// @desc    Serve course videos
-// @route   GET /api/files/videos/:filename
-// @access  Private (Teacher of course or Enrolled Student) - supports token via query param
 export const serveVideo = async (req: IOptionalUserRequest, res: Response, next: NextFunction) => {
   try {
     const { filename } = req.params;
@@ -184,11 +182,18 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
 
     console.log(`Video access request: User ${userId} (${userRole}) requesting video ${filename}`);
 
-    // Find course that contains this video
-    console.log(`Searching for course with video filename: ${filename}`);
+    // If no user authentication, deny access
+    if (!userId || !userRole) {
+      console.log(`Access denied: No authentication for video ${filename}`);
+      return next(new ErrorResponse('Authentication required', 401));
+    }
+
+    // Find course or lesson that contains this video
+    console.log(`Searching for course or lesson with video filename: ${filename}`);
     let course = null;
+    let lesson = null;
     
-    // Try to find course first
+    // 1. Search in Course first
     try {
       course = await Course.findOne({ 
         $or: [
@@ -205,20 +210,41 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
     } catch (dbError) {
       console.error('Database error finding course:', dbError);
     }
-    
-    // If no user authentication, deny access
-    if (!userId || !userRole) {
-      console.log(`Access denied: No authentication for video ${filename}`);
-      return next(new ErrorResponse('Authentication required', 401));
+
+    // 2. Search in Lesson if not found in Course
+    if (!course) {
+      try {
+        lesson = await Lesson.findOne({
+          $or: [
+            { videoUrl: `/uploads/videos/${filename}` },
+            { videoUrl: filename },
+            { videoUrl: `uploads/videos/${filename}` },
+            { videoUrl: `http://localhost:3000/uploads/videos/${filename}` },
+            { videoUrl: `/api/files/videos/${filename}` },
+            { videoUrl: `api/files/videos/${filename}` },
+            { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` },
+            { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` }
+          ]
+        });
+        
+        if (lesson) {
+          console.log(`Video found in lesson: ${lesson.title}`);
+          course = await Course.findById(lesson.course);
+        }
+      } catch (dbError) {
+        console.error('Database error finding lesson:', dbError);
+      }
     }
 
-    // Check permissions (same as course files)
+    // Check permissions
     let isTeacher = false;
     const isAdmin = userRole === 'ADMIN';
     let isEnrolled = false;
     
     if (course) {
-      isTeacher = course.teacher.toString() === userId;
+      if (course.teacher) {
+        isTeacher = course.teacher.toString() === userId;
+      }
       
       if (userRole === 'STUDENT') {
         const enrollment = await Enrollment.findOne({
@@ -228,22 +254,14 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
         isEnrolled = !!enrollment;
       }
     } else if (userRole === 'TEACHER') {
-      // For teachers without course found, allow access (they uploaded it)
+      // For teachers without course/lesson found, allow access (they uploaded it)
       isTeacher = true;
-      console.log(`Teacher access granted for video ${filename} (no course found)`);
+      console.log(`Teacher access granted for video ${filename} (no course/lesson found)`);
     }
-    
-    // If no course found and not teacher/admin, deny access
+
+    // If no course/lesson found and not teacher/admin, deny access
     if (!course && !isTeacher && !isAdmin) {
-      console.log('Course not found for video:', filename);
-      console.log('Searching with patterns:');
-      console.log('- /uploads/videos/' + filename);
-      console.log('- ' + filename);
-      console.log('- uploads/videos/' + filename);
-      console.log('- http://localhost:3000/uploads/videos/' + filename);
-      console.log('- /api/files/videos/' + filename);
-      console.log('- api/files/videos/' + filename);
-      console.log('- https://deev--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/' + filename);
+      console.log('Course/Lesson not found for video:', filename);
       return next(new ErrorResponse('Video not found', 404));
     }
 
@@ -255,8 +273,8 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
     const filePath = path.join(__dirname, '../../uploads/videos', filename);
     
     if (!fs.existsSync(filePath)) {
-      console.log('Video file not found:', filePath);
-      return next(new ErrorResponse('Video not found', 404));
+      console.log('Video file not found on disk:', filePath);
+      return next(new ErrorResponse('Video not found on server', 404));
     }
 
     console.log(`Access granted: Serving video ${filePath} to user ${userId}`);
@@ -266,14 +284,12 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.setHeader('Accept-Ranges', 'bytes');
     
-    // Prevent download for students - add security headers
+    // Support inline playing for all roles to prevent "Format error / Attachment block" in browser players
+    res.setHeader('Content-Disposition', 'inline');
+    
     if (userRole === 'STUDENT') {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('X-Frame-Options', 'DENY');
-      res.setHeader('Content-Disposition', 'inline'); // Force inline display, not download
-    } else {
-      // Teachers and admins can download
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     }
 
     // Handle range requests for video streaming
