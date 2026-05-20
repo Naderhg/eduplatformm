@@ -214,9 +214,9 @@
 .certificate-section {
   padding: 1.5rem;
   margin-top: 1.5rem;
-  border: 1px solid var(--border);
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  background: var(--card);
+  background: white;
 }
 
 .certificate-section h3 {
@@ -225,7 +225,7 @@
 }
 
 .certificate-section .section-description {
-  color: var(--muted-foreground);
+  color: #6b7280;
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
@@ -247,7 +247,7 @@
   position: relative;
   width: 48px;
   height: 26px;
-  background: var(--muted);
+  background: #d1d5db;
   border-radius: 13px;
   transition: background 0.3s ease;
   flex-shrink: 0;
@@ -267,7 +267,7 @@
 }
 
 .toggle-input:checked + .toggle-switch {
-  background: var(--primary);
+  background: #3b82f6;
 }
 
 .toggle-input:checked + .toggle-switch::after {

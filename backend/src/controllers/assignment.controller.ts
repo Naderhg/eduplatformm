@@ -353,12 +353,18 @@ export const updateAssignment = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: 'Not authorized to update this assignment' });
     }
 
-    // Don't allow updates if there are submissions
+    // Don't allow updates to questions/structure if there are submissions
     const submissionCount = await Submission.countDocuments({ assignment: assignment._id });
     if (submissionCount > 0) {
-      return res.status(400).json({ 
-        message: 'Cannot update assignment after students have submitted' 
-      });
+      const allowedKeys = ['certificateEnabled', 'certificatePassingScore', 'status'];
+      const updates = Object.keys(req.body);
+      const isStructuralUpdate = updates.some(key => !allowedKeys.includes(key));
+      
+      if (isStructuralUpdate) {
+        return res.status(400).json({ 
+          message: 'Cannot update assignment questions or structure after students have submitted' 
+        });
+      }
     }
 
     const updatedAssignment = await Assignment.findByIdAndUpdate(

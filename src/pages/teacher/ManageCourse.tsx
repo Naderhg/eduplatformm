@@ -133,6 +133,27 @@ export const ManageCourse: React.FC = () => {
     }
   };
 
+  const handleCertificateToggle = async (assignmentId: string, currentEnabled: boolean) => {
+    try {
+      console.log('Toggling certificate for assignment:', assignmentId, 'to:', !currentEnabled);
+      await assignmentsApi.update(assignmentId, { certificateEnabled: !currentEnabled });
+      
+      setAssignments(prevAssignments => 
+        prevAssignments.map(assignment => 
+          assignment._id === assignmentId 
+            ? { ...assignment, certificateEnabled: !currentEnabled }
+            : assignment
+        )
+      );
+      
+      toast.success(!currentEnabled ? 'Certificate enabled successfully!' : 'Certificate disabled successfully!');
+    } catch (error: any) {
+      console.error('Failed to toggle certificate status:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update certificate settings';
+      toast.error(errorMessage);
+    }
+  };
+
   const handleUpdateStatus = async (newStatus: 'draft' | 'published' | 'archived') => {
     if (!course || !id) return;
     
@@ -606,6 +627,11 @@ useEffect(() => {
                             }`}>
                               {assignment.status}
                             </span>
+                            {assignment.certificateEnabled && (
+                              <span className="status-badge px-2 py-1 rounded text-xs font-medium uppercase" style={{ backgroundColor: '#fef3c7', color: '#d97706', marginLeft: '8px' }}>
+                                🎓 Certificate
+                              </span>
+                            )}
                           </div>
                           <p className="assignment-description text-muted-foreground mb-4 leading-relaxed">{assignment.description}</p>
                           <div className="assignment-meta flex flex-col sm:flex-row gap-2 sm:gap-5 mb-4">
@@ -645,6 +671,18 @@ useEffect(() => {
                             <span className="hidden sm:inline">Submissions</span>
                             <span className="sm:hidden">Subs</span>
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleCertificateToggle(assignment._id, assignment.certificateEnabled || false)}
+                            className="btn btn-secondary btn-sm inline-flex items-center gap-1 px-2 py-1 border rounded text-xs font-medium w-full sm:w-auto justify-center"
+                            style={{
+                              backgroundColor: assignment.certificateEnabled ? '#fef3c7' : '#f3f4f6',
+                              color: assignment.certificateEnabled ? '#d97706' : '#374151',
+                              borderColor: assignment.certificateEnabled ? '#f59e0b' : '#d1d5db'
+                            }}
+                          >
+                            🎓 {assignment.certificateEnabled ? 'Disable Cert' : 'Enable Cert'}
+                          </button>
                           {assignment.status === 'draft' && (
                             <button
                               onClick={() => handlePublishAssignment(assignment._id)}

@@ -476,16 +476,16 @@ export const CreateAssignment: React.FC = () => {
           <p className="section-description" style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', marginBottom: '1rem' }}>
             Enable certificates for students who pass this assignment.
           </p>
-          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <label className="toggle-label" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 500, fontSize: '0.95rem' }}>
+          <div className="form-group">
+            <label className="toggle-label">
               <input
                 type="checkbox"
                 checked={certificateEnabled}
                 onChange={(e) => setCertificateEnabled(e.target.checked)}
                 className="toggle-input"
-                style={{ width: 'auto', marginRight: '0.5rem' }}
               />
-              Enable Certificate
+              <span className="toggle-switch"></span>
+              <span style={{ marginLeft: '8px' }}>Enable Certificate</span>
             </label>
           </div>
           {certificateEnabled && (

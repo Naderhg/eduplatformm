@@ -50,6 +50,17 @@ export const TeacherAssignments: React.FC = () => {
     }
   };
 
+  const handleCertificateToggle = async (assignmentId: string, currentEnabled: boolean) => {
+    try {
+      await assignmentsApi.update(assignmentId, { certificateEnabled: !currentEnabled });
+      toast.success(!currentEnabled ? 'Certificate enabled successfully!' : 'Certificate disabled successfully!');
+      fetchAssignments();
+    } catch (error: any) {
+      console.error('Failed to toggle certificate status:', error);
+      toast.error(error.response?.data?.message || 'Failed to update certificate settings');
+    }
+  };
+
   const fetchAssignments = async () => {
     try {
       setLoading(true);
@@ -170,6 +181,11 @@ export const TeacherAssignments: React.FC = () => {
                     <span className={`badge ${assignment.status === 'published' ? 'badge-success' : 'badge-warning'}`}>
                       {assignment.status === 'published' ? t('common.published') : t('common.draft')}
                     </span>
+                    {assignment.certificateEnabled && (
+                      <span className="badge" style={{ backgroundColor: '#d4af37', color: 'white', fontWeight: 600 }}>
+                        🎓 Certificate
+                      </span>
+                    )}
                   </div>
                 </div>
                 <p className="assignment-course">{assignment.course?.title || 'No course'}</p>
@@ -222,6 +238,19 @@ export const TeacherAssignments: React.FC = () => {
                   <Edit className="w-4 h-4 mr-2" />
                   {t('common.edit')}
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => handleCertificateToggle(assignment.id, assignment.certificateEnabled || false)}
+                  className="btn"
+                  style={{
+                    backgroundColor: assignment.certificateEnabled ? '#fef3c7' : '#f3f4f6',
+                    color: assignment.certificateEnabled ? '#d97706' : '#374151',
+                    border: '1px solid',
+                    borderColor: assignment.certificateEnabled ? '#f59e0b' : '#d1d5db'
+                  }}
+                >
+                  🎓 {assignment.certificateEnabled ? 'Disable Cert' : 'Enable Cert'}
+                </button>
               </div>
             </div>
           ))}
