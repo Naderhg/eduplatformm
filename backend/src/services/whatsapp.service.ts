@@ -40,7 +40,12 @@ export const formatWhatsAppNumber = (phone: string): string => {
  * @param to Destination phone number (e.g. +201208349801 or 01208349801)
  * @param body Message content
  */
-export const sendWhatsAppMessage = async (to: string, body: string) => {
+export const sendWhatsAppMessage = async (
+  to: string,
+  body: string,
+  contentSid?: string,
+  contentVariables?: Record<string, string>
+) => {
   if (!to) {
     console.log('Skipping WhatsApp notification: No recipient phone number provided.');
     return null;
@@ -55,12 +60,23 @@ export const sendWhatsAppMessage = async (to: string, body: string) => {
   const formattedFrom = fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`;
 
   try {
-    console.log(`Sending WhatsApp message From: ${formattedFrom} To: ${formattedTo}`);
-    const message = await client.messages.create({
-      body,
+    console.log(`Sending WhatsApp message From: ${formattedFrom} To: ${formattedTo} (Template: ${contentSid || 'None'})`);
+    
+    const messagePayload: any = {
       from: formattedFrom,
       to: formattedTo,
-    });
+    };
+
+    if (contentSid) {
+      messagePayload.contentSid = contentSid;
+      if (contentVariables) {
+        messagePayload.contentVariables = JSON.stringify(contentVariables);
+      }
+    } else {
+      messagePayload.body = body;
+    }
+
+    const message = await client.messages.create(messagePayload);
     console.log(`WhatsApp message sent successfully. Message SID: ${message.sid}`);
     return message;
   } catch (error: any) {

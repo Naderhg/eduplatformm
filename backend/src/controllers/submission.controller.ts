@@ -176,7 +176,17 @@ export const submitAssignment = async (req: AuthRequest, res: Response) => {
           `Score: ${autoGraded ? totalScore + '/' + assignment.maxScore : 'Pending manual grading'}\n\n` +
           `Thank you for your support!`;
         
-        await sendWhatsAppMessage(student.parentPhone, message);
+        const contentSid = process.env.TWILIO_CONTENT_SID;
+        if (contentSid) {
+          const scoreString = autoGraded ? `Score: ${totalScore}/${assignment.maxScore}` : 'Pending grading';
+          const contentVariables = {
+            "1": `${student.name}'s ${assignment.title}`,
+            "2": scoreString
+          };
+          await sendWhatsAppMessage(student.parentPhone, message, contentSid, contentVariables);
+        } else {
+          await sendWhatsAppMessage(student.parentPhone, message);
+        }
         console.log('WhatsApp notification sent to parent:', student.parentPhone);
       }
     } catch (whatsappError: any) {
@@ -282,33 +292,7 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
 
     console.log('Submission saved successfully:', gradedSubmission);
 
-    // Send WhatsApp notification to parent about grading
-    try {
-      const studentData = submission.student as any;
-      const student = await User.findById(studentData._id || studentData);
-      if (student && student.parentPhone && student.role === 'STUDENT') {
-        const courseTitle = assignment.course
-          ? (await Course.findById(assignment.course))?.title || 'Course'
-          : 'Standalone Assignment';
 
-        const percentage = assignment.maxScore > 0
-          ? Math.round((totalScore / assignment.maxScore) * 100)
-          : 0;
-
-        const message = `📝 Assignment Graded\n\n` +
-          `Your child *${student.name}*'s submission for *${assignment.title}* has been graded.\n\n` +
-          `Course: ${courseTitle}\n` +
-          `Score: *${totalScore}/${assignment.maxScore}* (${percentage}%)\n` +
-          (feedback ? `Feedback: ${feedback}\n` : '') +
-          `\n— Education Platform`;
-
-        await sendWhatsAppMessage(student.parentPhone, message);
-        console.log('WhatsApp grading notification sent to parent:', student.parentPhone);
-      }
-    } catch (whatsappError: any) {
-      console.error('Failed to send WhatsApp grading notification:', whatsappError);
-      // Don't fail the grading if WhatsApp fails
-    }
 
     res.json({
       message: 'Submission graded successfully',
