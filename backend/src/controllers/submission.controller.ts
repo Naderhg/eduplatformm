@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Assignment from '../models/assignment.model';
 import Submission from '../models/submission.model';
 import User from '../models/user.model';
+import Course from '../models/course.model';
 import { AuthRequest } from '../middleware/auth';
 import { sendWhatsAppMessage } from '../services/whatsapp.service';
 
@@ -280,6 +281,34 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
     const gradedSubmission = await submission.save();
 
     console.log('Submission saved successfully:', gradedSubmission);
+
+    // Send WhatsApp notification to parent about grading
+    try {
+      const studentData = submission.student as any;
+      const student = await User.findById(studentData._id || studentData);
+      if (student && student.parentPhone && student.role === 'STUDENT') {
+        const courseTitle = assignment.course
+          ? (await Course.findById(assignment.course))?.title || 'Course'
+          : 'Standalone Assignment';
+
+        const percentage = assignment.maxScore > 0
+          ? Math.round((totalScore / assignment.maxScore) * 100)
+          : 0;
+
+        const message = `📝 Assignment Graded\n\n` +
+          `Your child *${student.name}*'s submission for *${assignment.title}* has been graded.\n\n` +
+          `Course: ${courseTitle}\n` +
+          `Score: *${totalScore}/${assignment.maxScore}* (${percentage}%)\n` +
+          (feedback ? `Feedback: ${feedback}\n` : '') +
+          `\n— Education Platform`;
+
+        await sendWhatsAppMessage(student.parentPhone, message);
+        console.log('WhatsApp grading notification sent to parent:', student.parentPhone);
+      }
+    } catch (whatsappError: any) {
+      console.error('Failed to send WhatsApp grading notification:', whatsappError);
+      // Don't fail the grading if WhatsApp fails
+    }
 
     res.json({
       message: 'Submission graded successfully',
