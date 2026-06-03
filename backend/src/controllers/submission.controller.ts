@@ -178,9 +178,9 @@ export const submitAssignment = async (req: AuthRequest, res: Response) => {
         
         const contentSid = process.env.TWILIO_CONTENT_SID;
         if (contentSid) {
-          const scoreString = autoGraded ? `Score: ${totalScore}/${assignment.maxScore}` : 'Pending grading';
+          const scoreString = autoGraded ? `الدرجة: ${totalScore}/${assignment.maxScore}` : 'قيد التصحيح';
           const contentVariables = {
-            "1": `${student.name}'s ${assignment.title}`,
+            "1": `واجب ${assignment.title} للطالب ${student.name}`,
             "2": scoreString
           };
           await sendWhatsAppMessage(student.parentPhone, message, contentSid, contentVariables);
