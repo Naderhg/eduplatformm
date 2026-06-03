@@ -1,10 +1,6 @@
 import twilio from 'twilio';
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromNumber = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
-
-const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 /**
  * Formats a phone number to standard international format (+20...) for WhatsApp
@@ -51,17 +47,22 @@ export const sendWhatsAppMessage = async (
     return null;
   }
 
-  if (!client) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  if (!accountSid || !authToken) {
     console.warn('Twilio client is not initialized. Please verify TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in environment.');
     return null;
   }
+
+  const client = twilio(accountSid, authToken);
 
   const formattedTo = formatWhatsAppNumber(to);
   const formattedFrom = fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`;
 
   try {
     console.log(`Sending WhatsApp message From: ${formattedFrom} To: ${formattedTo} (Template: ${contentSid || 'None'})`);
-    
+
     const messagePayload: any = {
       from: formattedFrom,
       to: formattedTo,
