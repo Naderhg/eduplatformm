@@ -30,6 +30,9 @@ import { AssignmentResults } from './pages/student/AssignmentResults';
 import { StudentGrades } from './pages/student/StudentGrades';
 import { Certificate } from './pages/student/Certificate';
 
+// Home Page
+import Home from './pages/Home';
+
 // Styles
 import './styles/global.css';
 
@@ -82,8 +85,8 @@ const App = () => (
           <Route path="grades" element={<StudentGrades />} />
         </Route>
 
-        {/* Redirect root to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Home page */}
+        <Route path="/" element={<Home />} />
 
         {/* Catch all - redirect to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

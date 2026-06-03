@@ -175,5 +175,45 @@
       "submittedAt": "Submitted At",
       "noGrades": "No grades found"
     }
+  },
+  "home": {
+    "hero": {
+      "title": "Professional Education Platform for Teachers",
+      "subtitle": "Create your courses, manage assignments, and connect with students effortlessly",
+      "companyName": "Dev Community",
+      "cta": "Get Started",
+      "login": "Login"
+    },
+    "features": {
+      "title": "Our Features",
+      "subtitle": "Everything you need to manage your educational courses",
+      "feature1": {
+        "title": "Course Management",
+        "description": "Create and manage your educational courses with ease and flexibility"
+      },
+      "feature2": {
+        "title": "Assignments & Grading",
+        "description": "Create assignments and grade student work effectively"
+      },
+      "feature3": {
+        "title": "Student Tracking",
+        "description": "Track student progress and engagement with content"
+      },
+      "feature4": {
+        "title": "Effective Communication",
+        "description": "Direct communication channels with students to answer their inquiries"
+      }
+    },
+    "about": {
+      "title": "About Dev Community",
+      "description": "At Dev Community, we strive to provide a comprehensive educational platform that empowers teachers to deliver an exceptional learning experience to their students",
+      "mission": "Our Mission",
+      "missionText": "Empowering teachers through advanced technological tools to improve education quality"
+    },
+    "stats": {
+      "teachers": "Active Teachers",
+      "courses": "Educational Courses",
+      "students": "Enrolled Students"
+    }
   }
 }
