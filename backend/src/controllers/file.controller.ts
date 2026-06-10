@@ -15,7 +15,13 @@ import fs from 'fs';
 export const serveCourseFile = async (req: IOptionalUserRequest, res: Response, next: NextFunction) => {
   try {
     const { courseId, filename } = req.params;
-    const { token } = req.query;
+    const { token, url } = req.query;
+    
+    // If Cloudinary URL is provided directly, redirect to it
+    if (url && typeof url === 'string' && url.includes('cloudinary.com')) {
+      console.log(`Redirecting to Cloudinary URL: ${url}`);
+      return res.redirect(url);
+    }
     
     // Try to get user info from request (may not be present for download requests)
     let userId = null;
@@ -94,6 +100,17 @@ export const serveCourseFile = async (req: IOptionalUserRequest, res: Response, 
     console.log(`=== ACCESS GRANTED ===`);
     console.log(`User ${userId} (${userRole}) granted access to file ${filename} in course ${courseId}`);
 
+    // Check if file is a Cloudinary URL in the course files array
+    const courseFile = course.files?.find(file => 
+      file.url.includes('cloudinary.com') && 
+      (file.url.includes(filename) || file.name === filename)
+    );
+
+    if (courseFile && courseFile.url.includes('cloudinary.com')) {
+      console.log(`Redirecting to Cloudinary URL: ${courseFile.url}`);
+      return res.redirect(courseFile.url);
+    }
+
     // Handle both old format (full API path) and new format (filename only)
     // Old format: /api/files/course/123/filename.pdf
     // New format: filename.pdf
@@ -140,6 +157,14 @@ export const serveCourseFile = async (req: IOptionalUserRequest, res: Response, 
 export const serveThumbnail = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { filename } = req.params;
+    const { url } = req.query;
+    
+    // If Cloudinary URL is provided directly, redirect to it
+    if (url && typeof url === 'string' && url.includes('cloudinary.com')) {
+      console.log(`Redirecting to Cloudinary URL: ${url}`);
+      return res.redirect(url);
+    }
+    
     const filePath = path.join(__dirname, '../../uploads/thumbnails', filename);
     
     if (!fs.existsSync(filePath)) {
@@ -156,7 +181,13 @@ export const serveThumbnail = async (req: Request, res: Response, next: NextFunc
 export const serveVideo = async (req: IOptionalUserRequest, res: Response, next: NextFunction) => {
   try {
     const { filename } = req.params;
-    const { token } = req.query;
+    const { token, url } = req.query;
+    
+    // If Cloudinary URL is provided directly, redirect to it
+    if (url && typeof url === 'string' && url.includes('cloudinary.com')) {
+      console.log(`Redirecting to Cloudinary URL: ${url}`);
+      return res.redirect(url);
+    }
     
     // Try to get user info from request (may not be present for video element requests)
     let userId = null;
@@ -192,6 +223,7 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
     console.log(`Searching for course or lesson with video filename: ${filename}`);
     let course = null;
     let lesson = null;
+    let videoUrl = null;
     
     // 1. Search in Course first
     try {
@@ -204,9 +236,14 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
           { videoUrl: `/api/files/videos/${filename}` },
           { videoUrl: `api/files/videos/${filename}` },
           { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` },
-          { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` }
+          { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` },
+          { videoUrl: new RegExp(filename, 'i') } // Match Cloudinary URLs containing the filename
         ]
       });
+      
+      if (course && course.videoUrl) {
+        videoUrl = course.videoUrl;
+      }
     } catch (dbError) {
       console.error('Database error finding course:', dbError);
     }
@@ -223,13 +260,15 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
             { videoUrl: `/api/files/videos/${filename}` },
             { videoUrl: `api/files/videos/${filename}` },
             { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/api/files/videos/${filename}` },
-            { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` }
+            { videoUrl: `https://deev--edu-platform--fnj72wsf9xl6.code.run/uploads/videos/${filename}` },
+            { videoUrl: new RegExp(filename, 'i') } // Match Cloudinary URLs containing the filename
           ]
         });
         
         if (lesson) {
           console.log(`Video found in lesson: ${lesson.title}`);
           course = await Course.findById(lesson.course);
+          videoUrl = lesson.videoUrl;
         }
       } catch (dbError) {
         console.error('Database error finding lesson:', dbError);
@@ -270,11 +309,19 @@ export const serveVideo = async (req: IOptionalUserRequest, res: Response, next:
       return next(new ErrorResponse('Not authorized to access this video', 403));
     }
 
+    // If it's a Cloudinary URL, redirect to it
+    if (videoUrl && videoUrl.includes('cloudinary.com')) {
+      console.log(`Redirecting to Cloudinary URL: ${videoUrl}`);
+      return res.redirect(videoUrl);
+    }
+
+    // Otherwise, serve from local disk (backward compatibility)
     const filePath = path.join(__dirname, '../../uploads/videos', filename);
     
     if (!fs.existsSync(filePath)) {
       console.log('Video file not found on disk:', filePath);
-      return next(new ErrorResponse('Video not found on server', 404));
+      console.log('Available video files:', fs.readdirSync(path.join(__dirname, '../../uploads/videos')));
+      return next(new ErrorResponse('Video file not found on server. Please re-upload the video or contact support.', 404));
     }
 
     console.log(`Access granted: Serving video ${filePath} to user ${userId}`);

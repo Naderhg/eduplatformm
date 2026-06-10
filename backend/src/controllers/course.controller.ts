@@ -7,6 +7,7 @@ import { IUserRequest } from '../types/express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { uploadVideo, uploadThumbnail, uploadMultiple } from '../middleware/upload';
+import cloudinary from '../config/cloudinary';
 
 // @desc    Create a course
 // @route   POST /api/courses
@@ -378,27 +379,32 @@ export const uploadVideoFile = asyncHandler(async (req: IUserRequest, res: Respo
       return next(new ErrorResponse('No video file uploaded', 400));
     }
 
-    // Return the file path that can be stored in database
-    const filePath = `/uploads/videos/${req.file.filename}`;
-    // Generate secure URL with production backend URL
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://deev--edu-platform--fnj72wsf9xl6.code.run'
-      : `http://localhost:${process.env.PORT || 3000}`;
-    const secureUrl = `${baseUrl}/api/files/videos/${req.file.filename}`;
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'video',
+      folder: 'education-platform/videos',
+      public_id: `video-${Date.now()}`,
+    });
+
+    // Delete local file after upload
+    const fs = require('fs');
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     
     res.status(200).json({
       success: true,
       data: {
-        filename: req.file.filename,
+        filename: result.public_id,
         originalName: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
-        //url: filePath
-        url: secureUrl
+        url: result.secure_url
       }
     });
   } catch (error: any) {
-    return next(new ErrorResponse(error.message, 500));
+    console.error('Cloudinary upload error:', error);
+    return next(new ErrorResponse(error.message || 'Failed to upload video', 500));
   }
 });
 
@@ -411,27 +417,32 @@ export const uploadThumbnailFile = asyncHandler(async (req: IUserRequest, res: R
       return next(new ErrorResponse('No thumbnail file uploaded', 400));
     }
 
-    // Return the file path that can be stored in database
-    const filePath = `/uploads/thumbnails/${req.file.filename}`;
-    // Generate secure URL with production backend URL
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://deev--edu-platform--fnj72wsf9xl6.code.run'
-      : `http://localhost:${process.env.PORT || 3000}`;
-    const secureUrl = `${baseUrl}/api/files/thumbnails/${req.file.filename}`;
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'image',
+      folder: 'education-platform/thumbnails',
+      public_id: `thumbnail-${Date.now()}`,
+    });
+
+    // Delete local file after upload
+    const fs = require('fs');
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     
     res.status(200).json({
       success: true,
       data: {
-        filename: req.file.filename,
+        filename: result.public_id,
         originalName: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
-        //url: filePath
-        url: secureUrl
+        url: result.secure_url
       }
     });
   } catch (error: any) {
-    return next(new ErrorResponse(error.message, 500));
+    console.error('Cloudinary upload error:', error);
+    return next(new ErrorResponse(error.message || 'Failed to upload thumbnail', 500));
   }
 });
 
@@ -444,24 +455,37 @@ export const uploadCourseFiles = asyncHandler(async (req: IUserRequest, res: Res
       return next(new ErrorResponse('No files uploaded', 400));
     }
 
-    // Return the file paths that can be stored in database
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://deev--edu-platform--fnj72wsf9xl6.code.run'
-      : `http://localhost:${process.env.PORT || 3000}`;
-    
-    const files = (req.files as Express.Multer.File[]).map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      size: file.size,
-      mimetype: file.mimetype,
-      url: `${baseUrl}/api/files/course/${file.filename}` // Generate full URL for course files
-    }));
+    const fs = require('fs');
+    const uploadPromises = (req.files as Express.Multer.File[]).map(async (file) => {
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(file.path, {
+        resource_type: 'auto',
+        folder: 'education-platform/files',
+        public_id: `file-${Date.now()}-${file.originalname}`,
+      });
+
+      // Delete local file after upload
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+
+      return {
+        filename: result.public_id,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        url: result.secure_url
+      };
+    });
+
+    const files = await Promise.all(uploadPromises);
     
     res.status(200).json({
       success: true,
       data: files
     });
   } catch (error: any) {
-    return next(new ErrorResponse(error.message, 500));
+    console.error('Cloudinary upload error:', error);
+    return next(new ErrorResponse(error.message || 'Failed to upload files', 500));
   }
 });

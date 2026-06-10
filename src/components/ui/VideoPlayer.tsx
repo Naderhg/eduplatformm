@@ -14,6 +14,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
   if (!isOpen) return null;
 
   const getFullUrl = (url: string): string => {
+    // If it's already a Cloudinary URL, return it directly (no authentication needed)
+    if (url.includes('cloudinary.com')) {
+      return url;
+    }
+    
     // Get the API base URL from environment or fallback to production
     const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://deev--edu-platform--fnj72wsf9xl6.code.run/api';
     const backendBaseUrl = apiBaseUrl.replace('/api', '');
@@ -47,6 +52,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
     
     if (error) {
       console.error('Video error code:', error.code, error.message);
+      console.error('Video src:', video.src);
       
       // Show user-friendly error message
       let errorMessage = 'Failed to load video. ';
@@ -61,7 +67,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
           errorMessage += 'The video format is not supported or corrupted.';
           break;
         case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
-          errorMessage += 'The video cannot be loaded. You may not have permission to access this video.';
+          errorMessage += 'The video cannot be loaded. This could be due to:';
+          errorMessage += '\n1. The video file is missing from the server';
+          errorMessage += '\n2. You do not have permission to access this video';
+          errorMessage += '\n3. Your authentication token has expired';
           break;
         default:
           errorMessage += 'Please try refreshing the page or contact support.';
@@ -69,7 +78,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
       
       // Try to detect authentication issues
       if (video.src.includes('token=') && (error.code === 4 || error.message.includes('DEMUXER_ERROR'))) {
-        errorMessage = 'Authentication failed. Please log out and log back in to refresh your access token.';
+        errorMessage = '\n\nPossible solutions:';
+        errorMessage += '\n1. Log out and log back in to refresh your access token';
+        errorMessage += '\n2. Contact the teacher to re-upload the video';
+        errorMessage += '\n3. Check if you are enrolled in this course';
       }
       
       alert(errorMessage);

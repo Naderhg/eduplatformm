@@ -5,6 +5,7 @@ import Lesson from '../models/lesson.model';
 import mongoose from 'mongoose';
 import { uploadVideo, uploadMultiple } from '../middleware/upload';
 import { AuthRequest } from '../middleware/auth';
+import cloudinary from '../config/cloudinary';
 
 // @desc    Create a lesson
 // @route   POST /api/courses/:courseId/lessons
@@ -117,10 +118,23 @@ export const uploadLessonVideo = asyncHandler(async (req: AuthRequest, res: Resp
       return next(new ErrorResponse('No video file uploaded', 400));
     }
 
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'video',
+      folder: 'education-platform/lesson-videos',
+      public_id: `lesson-video-${Date.now()}`,
+    });
+
+    // Delete local file after upload
+    const fs = require('fs');
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
     // Update lesson with video URL
     const lesson = await Lesson.findByIdAndUpdate(
       req.params.lessonId,
-      { videoUrl: `/uploads/videos/${req.file.filename}` },
+      { videoUrl: result.secure_url },
       { new: true, runValidators: true }
     );
 
@@ -131,15 +145,16 @@ export const uploadLessonVideo = asyncHandler(async (req: AuthRequest, res: Resp
     res.status(200).json({
       success: true,
       data: {
-        filename: req.file.filename,
+        filename: result.public_id,
         originalName: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
-        url: lesson.videoUrl
+        url: result.secure_url
       }
     });
   } catch (error: any) {
-    return next(new ErrorResponse(error.message, 500));
+    console.error('Cloudinary upload error:', error);
+    return next(new ErrorResponse(error.message || 'Failed to upload video', 500));
   }
 });
 
@@ -152,13 +167,29 @@ export const uploadLessonFiles = asyncHandler(async (req: AuthRequest, res: Resp
       return next(new ErrorResponse('No files uploaded', 400));
     }
 
-    // Create file objects from uploaded files
-    const files = (req.files as Express.Multer.File[]).map(file => ({
-      name: file.originalname,
-      url: `/uploads/files/${file.filename}`,
-      size: file.size,
-      type: file.mimetype
-    }));
+    const fs = require('fs');
+    const uploadPromises = (req.files as Express.Multer.File[]).map(async (file) => {
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(file.path, {
+        resource_type: 'auto',
+        folder: 'education-platform/lesson-files',
+        public_id: `lesson-file-${Date.now()}-${file.originalname}`,
+      });
+
+      // Delete local file after upload
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+
+      return {
+        name: file.originalname,
+        url: result.secure_url,
+        size: file.size,
+        type: file.mimetype
+      };
+    });
+
+    const files = await Promise.all(uploadPromises);
 
     // Update lesson with new files
     const lesson = await Lesson.findByIdAndUpdate(
@@ -176,7 +207,8 @@ export const uploadLessonFiles = asyncHandler(async (req: AuthRequest, res: Resp
       data: files
     });
   } catch (error: any) {
-    return next(new ErrorResponse(error.message, 500));
+    console.error('Cloudinary upload error:', error);
+    return next(new ErrorResponse(error.message || 'Failed to upload files', 500));
   }
 });
 
