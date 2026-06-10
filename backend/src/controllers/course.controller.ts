@@ -384,6 +384,9 @@ export const uploadVideoFile = asyncHandler(async (req: IUserRequest, res: Respo
       resource_type: 'video',
       folder: 'education-platform/videos',
       public_id: `video-${Date.now()}`,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
     // Delete local file after upload

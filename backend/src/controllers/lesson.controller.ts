@@ -123,6 +123,9 @@ export const uploadLessonVideo = asyncHandler(async (req: AuthRequest, res: Resp
       resource_type: 'video',
       folder: 'education-platform/lesson-videos',
       public_id: `lesson-video-${Date.now()}`,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
     // Delete local file after upload

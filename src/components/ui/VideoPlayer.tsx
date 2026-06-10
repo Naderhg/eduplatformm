@@ -109,7 +109,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, title, isOpe
               className="w-full rounded-lg"
               style={{ maxHeight: '70vh' }}
               onError={handleError}
-              crossOrigin="use-credentials"
+              crossOrigin={videoUrl.includes('cloudinary.com') ? 'anonymous' : 'use-credentials'}
               controlsList="nodownload"
               disablePictureInPicture
               onContextMenu={(e) => e.preventDefault()}
