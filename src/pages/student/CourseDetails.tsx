@@ -42,52 +42,30 @@ export const CourseDetails: React.FC = () => {
     fetchCourseDetails();
   }, [id]);
 
-  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    console.error('Course video error:', e);
-    const video = e.currentTarget;
-    const error = video.error;
-    if (error) {
-      console.error('Video error code:', error.code, error.message);
-      toast.error('Failed to load video. Please try again later.');
-    }
-  };
-
   const handleFileDownload = (file: any) => {
-    console.log('=== File Download Clicked ===');
-    console.log('File data:', file);
-    console.log('File name:', file.name);
-    console.log('File URL:', file.url);
-    console.log('Course ID:', id);
-    
-    // Create a temporary link element to trigger download
     const link = document.createElement('a');
-    
-    // Construct the proper URL for course file download
-    // The backend expects: /api/files/course/:courseId/:filename
-    // Use file.url which contains the actual stored filename, not file.name (original filename)
-    const encodedFilename = encodeURIComponent(file.url);
-    const downloadUrl = `/api/files/course/${id}/${encodedFilename}`;
-    
-    // Add authentication token if available
+
+    // If it's a Cloudinary or any full HTTP URL → open directly
+    if (file.url && file.url.startsWith('http')) {
+      link.href = file.url;
+      link.download = file.name;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // Otherwise go through the backend proxy (backward compat for old local files)
     const token = localStorage.getItem('token');
-    const fullUrl = token ? `${BACKEND_URL}${downloadUrl}?token=${token}` : `${BACKEND_URL}${downloadUrl}`;
-    
-    console.log('Encoded filename:', encodedFilename);
-    console.log('Download URL constructed:', fullUrl);
-    
+    const filename = encodeURIComponent(file.url);
+    const fullUrl = `${BACKEND_URL}/api/files/course/${id}/${filename}${token ? `?token=${token}` : ''}`;
     link.href = fullUrl;
-    link.download = file.name; // Use original filename for download
+    link.download = file.name;
     link.target = '_blank';
     document.body.appendChild(link);
-    
-    console.log('Link added to DOM, about to click...');
-    
     link.click();
-    
-    console.log('Link clicked, removing from DOM...');
     document.body.removeChild(link);
-    
-    console.log('Download process completed');
   };
 
   if (isLoading) {
@@ -170,63 +148,47 @@ export const CourseDetails: React.FC = () => {
             <Play className="h-5 w-5 mr-2" />
             Course Video
           </h3>
-          <div className="video-container">
-            <div 
-              className="video-preview"
-              onClick={() => setIsVideoOpen(true)}
-              style={{ cursor: 'pointer', position: 'relative' }}
-            >
-              <video 
+          <div
+            className="video-container"
+            onClick={() => setIsVideoOpen(true)}
+            role="button"
+            aria-label="Play course video"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setIsVideoOpen(true)}
+            style={{ cursor: 'pointer' }}
+          >
+            {/* Thumbnail from course thumbnail or black bg */}
+            {course.thumbnail ? (
+              <img
+                src={course.thumbnail.startsWith('http') ? course.thumbnail : `${BACKEND_URL}${course.thumbnail}`}
+                alt="Video thumbnail"
                 className="course-video-player"
-                crossOrigin="use-credentials"
-                controlsList="nodownload"
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                <source 
-                  src={
-                    (() => {
-                      const url = course.videoUrl?.startsWith('http') ? course.videoUrl : `${BACKEND_URL}${course.videoUrl}`;
-                      const token = localStorage.getItem('token');
-                      return token ? `${url}?token=${token}` : url;
-                    })()
-                  } 
-                  type="video/mp4" 
-                />
-                Your browser does not support the video tag.
-              </video>
-              <div 
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  background: 'rgba(0,0,0,0.7)',
-                  color: 'white',
-                  padding: '10px 20px',
-                  borderRadius: '5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
-                <Play size={20} />
-                Click to play
+                style={{ objectFit: 'cover' }}
+              />
+            ) : (
+              <div className="course-video-player" style={{ background: '#111' }} />
+            )}
+            <div className="video-play-overlay">
+              <div className="video-play-btn-big">
+                <Play size={44} fill="white" />
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Video Player Modal */}
+      {/* Secure Video Player Modal */}
       {course.videoUrl && (
         <VideoPlayer
-          videoUrl={
-            (() => {
-              const url = course.videoUrl?.startsWith('http') ? course.videoUrl : `${BACKEND_URL}${course.videoUrl}`;
-              const token = localStorage.getItem('token');
-              return token ? `${url}?token=${token}` : url;
-            })()
-          }
+          videoUrl={(() => {
+            const url = course.videoUrl?.startsWith('http')
+              ? course.videoUrl
+              : `${BACKEND_URL}${course.videoUrl}`;
+            // Cloudinary URLs don't need auth tokens
+            if (url.includes('cloudinary.com')) return url;
+            const token = localStorage.getItem('token');
+            return token ? `${url}?token=${token}` : url;
+          })()}
           title={course.title}
           isOpen={isVideoOpen}
           onClose={() => setIsVideoOpen(false)}

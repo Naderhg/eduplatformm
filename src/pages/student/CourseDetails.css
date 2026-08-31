@@ -123,6 +123,12 @@
   overflow: hidden;
   border-radius: 0.75rem;
   background-color: #000;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.video-container:hover {
+  transform: scale(1.005);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
 }
 
 .course-video-player {
@@ -132,6 +138,40 @@
   width: 100%;
   height: 100%;
   border-radius: 0.75rem;
+}
+
+/* Play overlay shown on top of thumbnail */
+.video-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  border-radius: 0.75rem;
+  transition: background 0.2s ease;
+}
+.video-container:hover .video-play-overlay { background: rgba(0,0,0,0.45); }
+
+.video-play-btn-big {
+  background: rgba(59, 130, 246, 0.88);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.video-container:hover .video-play-btn-big {
+  transform: scale(1.12);
+  background: rgba(59, 130, 246, 1);
+}
+
+@media (max-width: 600px) {
+  .video-play-btn-big { width: 60px; height: 60px; }
+  .video-play-btn-big svg { width: 32px; height: 32px; }
 }
 
 .course-outcomes,

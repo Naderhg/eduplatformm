@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import { coursesApi } from '../../api/courses.api';
 import { assignmentsApi } from '../../api/assignments.api';
+import { lessonsApi, Lesson } from '../../api/lessons.api';
 import { Loader } from '../../components/common/Loader';
 import CommentSection from '../../components/common/CommentSection';
 import { toast } from 'react-toastify';
@@ -73,6 +74,8 @@ export interface CourseWithDetails {
   updatedAt: string;
 }
 
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://deev--edu-platform--fnj72wsf9xl6.code.run';
+
 export const ManageCourse: React.FC = () => {
   const { t } = useLanguage();
   const params = useParams();
@@ -81,6 +84,8 @@ export const ManageCourse: React.FC = () => {
   const { user } = useAuth();
   const [course, setCourse] = useState<CourseWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [lessonsLoading, setLessonsLoading] = useState(false);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [publishingAssignment, setPublishingAssignment] = useState<string | null>(null);
@@ -104,6 +109,30 @@ export const ManageCourse: React.FC = () => {
     } finally {
       setAssignmentsLoading(false);
     }
+  };
+
+  const fetchLessons = async () => {
+    if (!id) return;
+    try {
+      setLessonsLoading(true);
+      const response = await lessonsApi.getAll(id);
+      setLessons(response.data);
+    } catch (error: any) {
+      console.error('Failed to fetch lessons:', error);
+    } finally {
+      setLessonsLoading(false);
+    }
+  };
+
+  const handleFileDownload = (file: any) => {
+    if (file.url && file.url.startsWith('http')) {
+      window.open(file.url, '_blank');
+      return;
+    }
+    const token = localStorage.getItem('token');
+    const filename = encodeURIComponent(file.url);
+    const fullUrl = `${BACKEND_URL}/api/files/course/${id}/${filename}${token ? `?token=${token}` : ''}`;
+    window.open(fullUrl, '_blank');
   };
 
   const handlePublishAssignment = async (assignmentId: string) => {
@@ -273,6 +302,9 @@ export const ManageCourse: React.FC = () => {
 useEffect(() => {
   if (activeTab === 'assignments') {
     fetchAssignments();
+  }
+  if (activeTab === 'content') {
+    fetchLessons();
   }
 }, [activeTab, id]);
 
@@ -511,29 +543,31 @@ useEffect(() => {
                 <div className="content-section bg-secondary/50 border border-border rounded-lg p-4 sm:p-6">
                   <h4 className="text-base font-semibold text-foreground mb-4">Lessons</h4>
                   <div className="lessons-list">
-                    {course.lessonsCount > 0 ? (
+                    {lessonsLoading ? (
+                      <div className="flex items-center justify-center py-8"><Loader text="Loading lessons..." /></div>
+                    ) : lessons.length > 0 ? (
                       <div className="lesson-items space-y-3">
-                        {[...Array(course.lessonsCount)].map((_, index) => (
-                          <div key={index} className="lesson-item bg-card border border-border rounded-lg p-4 shadow-sm">
+                        {lessons.map((lesson, index) => (
+                          <div key={lesson._id} className="lesson-item bg-card border border-border rounded-lg p-4 shadow-sm">
                             <div className="lesson-thumbnail text-primary mb-3">
                               <Video size={32} />
                             </div>
                             <div className="lesson-info">
-                              <h5 className="text-base font-semibold text-foreground mb-1">Lesson {index + 1}</h5>
-                              <p className="text-sm text-muted-foreground mb-2">Click to edit lesson content</p>
-                              <div className="lesson-meta flex gap-3">
-                                <span className="duration text-xs text-muted-foreground bg-muted px-2 py-1 rounded">30 min</span>
-                                <span className="status text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Draft</span>
+                              <h5 className="text-base font-semibold text-foreground mb-1">{lesson.title}</h5>
+                              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{lesson.description}</p>
+                              <div className="lesson-meta flex gap-3 flex-wrap">
+                                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">#{index + 1}</span>
+                                <span className={`text-xs px-2 py-1 rounded ${lesson.isPublished ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                                  {lesson.isPublished ? 'Published' : 'Draft'}
+                                </span>
+                                {lesson.videoUrl && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded flex items-center gap-1"><Video size={10} /> Video</span>}
+                                {lesson.files?.length > 0 && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">{lesson.files.length} files</span>}
                               </div>
                             </div>
                             <div className="lesson-actions flex gap-2 mt-3">
                               <button className="btn btn-sm btn-secondary inline-flex items-center gap-1 px-2 py-1 border border-border rounded text-xs font-medium text-foreground bg-card hover:bg-accent transition-colors">
                                 <Edit size={14} />
                                 Edit
-                              </button>
-                              <button className="btn btn-sm btn-ghost inline-flex items-center gap-1 px-2 py-1 border border-transparent rounded text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
-                                <Trash2 size={14} />
-                                Delete
                               </button>
                             </div>
                           </div>
@@ -543,10 +577,10 @@ useEffect(() => {
                       <div className="content-placeholder flex flex-col items-center justify-center py-12 text-center">
                         <Video size={48} className="text-muted-foreground mb-4" />
                         <p className="text-muted-foreground mb-4">No lessons added yet</p>
-                        <button className="btn btn-primary inline-flex items-center gap-2 px-3 py-2 border border-transparent rounded-md text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors">
+                        <Link to={`/teacher/courses/${id}/content`} className="btn btn-primary inline-flex items-center gap-2 px-3 py-2 border border-transparent rounded-md text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors">
                           <Plus size={16} />
                           Add First Lesson
-                        </button>
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -569,13 +603,12 @@ useEffect(() => {
                               <p className="text-sm text-muted-foreground">{file.type} • {(file.size / 1024 / 1024).toFixed(2)} MB</p>
                             </div>
                             <div className="resource-actions flex gap-2 mt-3">
-                              <button className="btn btn-sm btn-secondary inline-flex items-center gap-1 px-2 py-1 border border-border rounded text-xs font-medium text-foreground bg-card hover:bg-accent transition-colors">
+                              <button
+                                onClick={() => handleFileDownload(file)}
+                                className="btn btn-sm btn-secondary inline-flex items-center gap-1 px-2 py-1 border border-border rounded text-xs font-medium text-foreground bg-card hover:bg-accent transition-colors"
+                              >
                                 <Download size={14} />
                                 Download
-                              </button>
-                              <button className="btn btn-sm btn-ghost inline-flex items-center gap-1 px-2 py-1 border border-transparent rounded text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
-                                <Trash2 size={14} />
-                                Delete
                               </button>
                             </div>
                           </div>
