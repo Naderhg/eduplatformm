@@ -1,12 +1,50 @@
-import React, { useState, useRef, useEffect, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { coursesApi, CreateCourseData } from '../../api/courses.api';
 import { uploadApi } from '../../api/upload.api';
 import { Loader } from '../../components/common/Loader';
-import { FileText, X, Upload, File, BookOpen, Award, Video } from 'lucide-react';
+import { FileText, X, Upload, File, BookOpen, Video, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import './CreateCourse.css';
+
+/* ── Reusable upload-progress widget ── */
+type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
+interface UploadState { status: UploadStatus; progress: number; fileName: string; errorMsg?: string; }
+const initUpload = (): UploadState => ({ status: 'idle', progress: 0, fileName: '' });
+
+interface UploadProgressProps { state: UploadState; }
+const UploadProgress: React.FC<UploadProgressProps> = ({ state }) => {
+  if (state.status === 'idle') return null;
+  return (
+    <div className="upload-progress-wrap mt-3">
+      {/* File name row */}
+      <div className="flex items-center gap-2 mb-1">
+        {state.status === 'uploading' && <Loader2 size={14} className="upload-spinner text-primary" />}
+        {state.status === 'success'   && <CheckCircle2 size={14} className="text-green-500" />}
+        {state.status === 'error'     && <AlertCircle  size={14} className="text-red-500" />}
+        <span className="text-xs text-muted-foreground truncate max-w-[260px]">{state.fileName}</span>
+        <span className="ml-auto text-xs font-semibold tabular-nums">
+          {state.status === 'uploading' ? `${state.progress}%` :
+           state.status === 'success'   ? 'تم الرفع ✓' : 'فشل الرفع ✗'}
+        </span>
+      </div>
+      {/* Bar */}
+      <div className="upload-progress-bg">
+        <div
+          className={`upload-progress-fill ${
+            state.status === 'success' ? 'bg-green-500' :
+            state.status === 'error'   ? 'bg-red-500'   : 'bg-primary'
+          }`}
+          style={{ width: state.status === 'success' ? '100%' : `${state.progress}%` }}
+        />
+      </div>
+      {state.status === 'error' && state.errorMsg && (
+        <p className="text-xs text-red-500 mt-1">{state.errorMsg}</p>
+      )}
+    </div>
+  );
+};
 
 // Types and Interfaces
 interface FileWithPreview extends File {
@@ -87,6 +125,11 @@ const CreateCourse: React.FC = () => {
   const [thumbnail, setThumbnail] = useState<FileWithPreview | null>(null);
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState('');
+
+  // Upload progress states
+  const [thumbUpload,  setThumbUpload]  = useState<UploadState>(initUpload());
+  const [videoUpload,  setVideoUpload]  = useState<UploadState>(initUpload());
+  const [filesUpload,  setFilesUpload]  = useState<UploadState>(initUpload());
   
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,111 +174,86 @@ const CreateCourse: React.FC = () => {
 
   // Handle thumbnail file selection
   const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      try {
-        // Show loading toast
-        const loadingToast = toast.loading('Uploading thumbnail...');
-        
-        // Upload thumbnail to server
-        const response = await uploadApi.uploadThumbnail(file);
-        
-        // Set thumbnail with preview and server URL
-        setThumbnail({
-          ...file,
-          id: Math.random().toString(36).substr(2, 9),
-          preview: URL.createObjectURL(file),
-          serverUrl: response.data.url
-        });
-        
-        // Show success toast
-        toast.success('Thumbnail uploaded successfully!');
-        
-      } catch (error: any) {
-        console.error('Thumbnail upload failed:', error);
-        toast.error(error.response?.data?.message || 'Failed to upload thumbnail');
-        
-        // Clear the file input
-        if (thumbnailInputRef.current) {
-          thumbnailInputRef.current.value = '';
-        }
-      }
+    if (!e.target.files?.[0]) return;
+    const file = e.target.files[0];
+
+    setThumbUpload({ status: 'uploading', progress: 0, fileName: file.name });
+
+    try {
+      const response = await uploadApi.uploadThumbnail(file, (pct) =>
+        setThumbUpload(prev => ({ ...prev, progress: pct }))
+      );
+
+      setThumbnail({
+        ...file,
+        id: Math.random().toString(36).substr(2, 9),
+        preview: URL.createObjectURL(file),
+        serverUrl: response.data.url,
+        originalName: file.name,
+        originalSize: file.size,
+        originalType: file.type,
+      });
+      setThumbUpload({ status: 'success', progress: 100, fileName: file.name });
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'فشل رفع الصورة';
+      setThumbUpload({ status: 'error', progress: 0, fileName: file.name, errorMsg: msg });
+      toast.error(msg);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
     }
   };
 
   // Handle video file selection
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      try {
-        // Show loading toast
-        const loadingToast = toast.loading('Uploading video...');
-        
-        // Upload video to server
-        const response = await uploadApi.uploadVideo(file);
-        
-        // Update form data with server URL
-        setFormData(prev => ({
-          ...prev,
-          videoUrl: response.data.url
-        }));
-        
-        // Show success toast
-        toast.success('Video uploaded successfully!');
-        
-      } catch (error: any) {
-        console.error('Video upload failed:', error);
-        toast.error(error.response?.data?.message || 'Failed to upload video');
-        
-        // Clear the file input
-        if (videoInputRef.current) {
-          videoInputRef.current.value = '';
-        }
-      }
+    if (!e.target.files?.[0]) return;
+    const file = e.target.files[0];
+
+    setVideoUpload({ status: 'uploading', progress: 0, fileName: file.name });
+
+    try {
+      const response = await uploadApi.uploadVideo(file, (pct) =>
+        setVideoUpload(prev => ({ ...prev, progress: pct }))
+      );
+
+      setFormData(prev => ({ ...prev, videoUrl: response.data.url }));
+      setVideoUpload({ status: 'success', progress: 100, fileName: file.name });
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'فشل رفع الفيديو';
+      setVideoUpload({ status: 'error', progress: 0, fileName: file.name, errorMsg: msg });
+      toast.error(msg);
+      if (videoInputRef.current) videoInputRef.current.value = '';
     }
   };
 
   // Handle additional files selection
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const filesArray = Array.from(e.target.files);
-      
-      try {
-        // Show loading toast
-        const loadingToast = toast.loading('Uploading course materials...');
-        
-        // Upload files to server using the uploadFiles method
-        const response = await uploadApi.uploadFiles(filesArray);
-        
-        // Process uploaded files with server URLs
-        const uploadedFiles = filesArray.map((file, index) => ({
-          ...file,
-          id: Math.random().toString(36).substr(2, 9),
-          preview: URL.createObjectURL(file),
-          serverUrl: response.data[index].url,
-          // Preserve original file properties
-          originalName: file.name,
-          originalSize: file.size,
-          originalType: file.type
-        }));
-        
-        // Add uploaded files to state
-        setFiles(prev => [...prev, ...uploadedFiles]);
-        
-        // Show success toast
-        toast.success(`${filesArray.length} file(s) uploaded successfully!`);
-        
-      } catch (error: any) {
-        console.error('File upload failed:', error);
-        toast.error(error.response?.data?.message || 'Failed to upload files');
-        
-        // Clear file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
+    if (!e.target.files?.length) return;
+    const filesArray = Array.from(e.target.files);
+    const label = filesArray.length === 1 ? filesArray[0].name : `${filesArray.length} ملفات`;
+
+    setFilesUpload({ status: 'uploading', progress: 0, fileName: label });
+
+    try {
+      const response = await uploadApi.uploadFiles(filesArray, (pct) =>
+        setFilesUpload(prev => ({ ...prev, progress: pct }))
+      );
+
+      const uploaded = filesArray.map((file, i) => ({
+        ...file,
+        id: Math.random().toString(36).substr(2, 9),
+        preview: URL.createObjectURL(file),
+        serverUrl: response.data[i].url,
+        originalName: file.name,
+        originalSize: file.size,
+        originalType: file.type,
+      }));
+
+      setFiles(prev => [...prev, ...uploaded]);
+      setFilesUpload({ status: 'success', progress: 100, fileName: label });
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'فشل رفع الملفات';
+      setFilesUpload({ status: 'error', progress: 0, fileName: label, errorMsg: msg });
+      toast.error(msg);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -484,16 +502,17 @@ const CreateCourse: React.FC = () => {
 
           {/* Course Thumbnail */}
           <div className="bg-card dark:bg-card border border-border rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Course Thumbnail</h2>
-            <div 
-              className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary transition-colors bg-secondary/50"
-              onClick={triggerThumbnailInput}
+            <h2 className="text-xl font-semibold mb-4">صورة الكورس (Thumbnail)</h2>
+            <div
+              className={`border-2 border-dashed rounded-md p-6 text-center transition-colors bg-secondary/50
+                ${thumbUpload.status === 'uploading' ? 'border-primary cursor-not-allowed' : 'border-border cursor-pointer hover:border-primary'}`}
+              onClick={thumbUpload.status === 'uploading' ? undefined : triggerThumbnailInput}
             >
               {thumbnail ? (
-                <div className="relative">
-                  <img 
-                    src={thumbnail.preview} 
-                    alt="Thumbnail preview" 
+                <div className="relative inline-block">
+                  <img
+                    src={thumbnail.preview}
+                    alt="Thumbnail preview"
                     className="max-h-48 mx-auto rounded-md"
                   />
                   <button
@@ -501,6 +520,7 @@ const CreateCourse: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setThumbnail(null);
+                      setThumbUpload(initUpload());
                     }}
                     className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 focus:outline-none transition-colors"
                   >
@@ -508,15 +528,12 @@ const CreateCourse: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 pointer-events-none">
                   <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-primary hover:text-primary/80 transition-colors">
-                      Click to upload
-                    </span>{' '}
-                    or drag and drop
+                    <span className="font-medium text-primary">اضغط للرفع</span> أو اسحب وأفلت
                   </p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, GIF حتى 5MB</p>
                 </div>
               )}
               <input
@@ -525,47 +542,49 @@ const CreateCourse: React.FC = () => {
                 onChange={handleThumbnailChange}
                 accept="image/*"
                 className="hidden"
+                disabled={thumbUpload.status === 'uploading'}
               />
             </div>
+            <UploadProgress state={thumbUpload} />
           </div>
 
           {/* Course Video */}
           <div className="bg-card dark:bg-card border border-border rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Course Introduction Video</h2>
-            <div 
-              className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary transition-colors bg-secondary/50"
-              onClick={triggerVideoInput}
+            <h2 className="text-xl font-semibold mb-4">فيديو تعريفي بالكورس</h2>
+            <div
+              className={`border-2 border-dashed rounded-md p-6 text-center transition-colors bg-secondary/50
+                ${videoUpload.status === 'uploading' ? 'border-primary cursor-not-allowed' : 'border-border cursor-pointer hover:border-primary'}`}
+              onClick={videoUpload.status === 'uploading' ? undefined : triggerVideoInput}
             >
-              {formData.videoUrl ? (
-                <div className="relative">
-                  <video 
-                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `${(import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://deev--edu-platform--fnj72wsf9xl6.code.run')}${formData.videoUrl}`} 
-                    controls
-                    className="max-h-64 mx-auto rounded-md"
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
+              {formData.videoUrl && videoUpload.status === 'success' ? (
+                <div className="relative inline-flex flex-col items-center gap-2">
+                  <CheckCircle2 className="h-12 w-12 text-green-500" />
+                  <p className="text-sm font-medium text-green-600">تم رفع الفيديو بنجاح</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-xs">{videoUpload.fileName}</p>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setFormData(prev => ({ ...prev, videoUrl: '' }));
+                      setVideoUpload(initUpload());
                     }}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 focus:outline-none transition-colors"
+                    className="mt-1 px-3 py-1 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10 transition-colors"
                   >
-                    <X className="h-4 w-4" />
+                    إزالة وإعادة الرفع
                   </button>
                 </div>
+              ) : videoUpload.status === 'uploading' ? (
+                <div className="space-y-2 pointer-events-none">
+                  <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                  <p className="text-sm font-medium text-primary">جاري رفع الفيديو...</p>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 pointer-events-none">
                   <Video className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-primary hover:text-primary/80 transition-colors">
-                      Click to upload
-                    </span>{' '}
-                    or drag and drop
+                    <span className="font-medium text-primary">اضغط للرفع</span> أو اسحب وأفلت
                   </p>
-                  <p className="text-xs text-muted-foreground">MP4, WebM up to 50MB</p>
+                  <p className="text-xs text-muted-foreground">MP4, WebM حتى 50MB</p>
                 </div>
               )}
               <input
@@ -574,8 +593,10 @@ const CreateCourse: React.FC = () => {
                 onChange={handleVideoChange}
                 accept="video/*"
                 className="hidden"
+                disabled={videoUpload.status === 'uploading'}
               />
             </div>
+            <UploadProgress state={videoUpload} />
           </div>
 
           {/* Course Requirements */}
@@ -652,21 +673,23 @@ const CreateCourse: React.FC = () => {
 
           {/* Course Materials */}
           <div className="bg-card dark:bg-card border border-border rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Course Materials</h2>
+            <h2 className="text-xl font-semibold mb-4">ملفات الكورس (مواد دراسية)</h2>
             <div className="space-y-4">
-              <div 
-                className="border-2 border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:border-primary transition-colors bg-secondary/50"
-                onClick={triggerFileInput}
+              <div
+                className={`border-2 border-dashed rounded-md p-6 text-center transition-colors bg-secondary/50
+                  ${filesUpload.status === 'uploading' ? 'border-primary cursor-not-allowed' : 'border-border cursor-pointer hover:border-primary'}`}
+                onClick={filesUpload.status === 'uploading' ? undefined : triggerFileInput}
               >
-                <div className="space-y-2">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                <div className="space-y-2 pointer-events-none">
+                  {filesUpload.status === 'uploading' ? (
+                    <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                  ) : (
+                    <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                  )}
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-primary hover:text-primary/80 transition-colors">
-                      Click to upload
-                    </span>{' '}
-                    or drag and drop
+                    <span className="font-medium text-primary">اضغط للرفع</span> أو اسحب وأفلت
                   </p>
-                  <p className="text-xs text-muted-foreground">PDF, DOC, PPT, ZIP up to 10MB</p>
+                  <p className="text-xs text-muted-foreground">PDF, DOC, PPT, ZIP حتى 10MB</p>
                 </div>
                 <input
                   type="file"
@@ -674,8 +697,10 @@ const CreateCourse: React.FC = () => {
                   onChange={handleFileChange}
                   className="hidden"
                   multiple
+                  disabled={filesUpload.status === 'uploading'}
                 />
               </div>
+              <UploadProgress state={filesUpload} />
 
               {files.length > 0 && (
                 <div className="space-y-2">
@@ -707,21 +732,30 @@ const CreateCourse: React.FC = () => {
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-6">
-            <button
-              type="button"
-              className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors"
-              onClick={() => navigate('/teacher/courses')}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-            >
-              Create Course
-            </button>
-          </div>
+          {(() => {
+            const anyUploading = [thumbUpload, videoUpload, filesUpload].some(u => u.status === 'uploading');
+            return (
+              <div className="flex justify-end space-x-4 pt-6">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors"
+                  onClick={() => navigate('/teacher/courses')}
+                  disabled={anyUploading}
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={anyUploading}
+                  className={`inline-flex items-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary
+                    ${anyUploading ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'}`}
+                >
+                  {anyUploading && <Loader2 size={16} className="animate-spin" />}
+                  {anyUploading ? 'جاري الرفع...' : 'إنشاء الكورس'}
+                </button>
+              </div>
+            );
+          })()}
         </form>
       </div>
     </div>
