@@ -22,6 +22,7 @@ import './models/session.model'; // Import the model to ensure it's registered
 import './models/course.model'; // Import the model to ensure it's registered
 import './models/enrollment.model'; // Import the model to ensure it's registered
 import './models/lesson.model'; // Import the model to ensure it's registered
+import './models/lessonProgress.model'; // Import the model to ensure it's registered
 import './models/assignment.model'; // Import the model to ensure it's registered
 import './models/submission.model'; // Import the model to ensure it's registered
 import './models/comment.model'; // Import the model to ensure it's registered

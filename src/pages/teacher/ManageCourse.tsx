@@ -64,26 +64,58 @@ const LessonModal: React.FC<LessonModalProps> = ({ courseId, lesson, onClose, on
   const [qChoices, setQChoices] = useState<string[]>(['', '', '', '']);
   const [qAnswer, setQAnswer] = useState('');
   const [qPoints, setQPoints] = useState(1);
+  const [editingQuestionIdx, setEditingQuestionIdx] = useState<number | null>(null);
+
+  const resetQuestionForm = () => {
+    setQText(''); setQAnswer(''); setQChoices(['', '', '', '']); setQPoints(1); setQType('mcq'); setEditingQuestionIdx(null);
+  };
+
+  const startEditQuestion = (idx: number) => {
+    const q = questions[idx];
+    setQText(q.text);
+    setQType(q.type);
+    setQChoices(q.type === 'mcq' && q.choices?.length ? [...q.choices] : ['', '', '', '']);
+    setQAnswer(q.correctAnswer);
+    setQPoints(q.points);
+    setEditingQuestionIdx(idx);
+  };
 
   const addQuestion = () => {
     if (!qText.trim()) { toast.error('اكتب نص السؤال'); return; }
-    if (qType === 'mcq' && (!qAnswer || !qChoices[qChoices.findIndex(c => c === qAnswer)])) { toast.error('اختر الإجابة الصحيحة'); return; }
+
+    if (qType === 'mcq') {
+      const filledChoices = qChoices.filter(c => c.trim());
+      if (filledChoices.length < 2) { toast.error('اكتب اختيارين على الأقل'); return; }
+      if (!qAnswer.trim()) { toast.error('اختر الإجابة الصحيحة'); return; }
+      if (!filledChoices.includes(qAnswer)) { toast.error('الإجابة الصحيحة يجب أن تكون أحد الاختيارات'); return; }
+    }
     if (qType === 'truefalse' && !qAnswer) { toast.error('اختر الإجابة الصحيحة'); return; }
     if (qType === 'short' && !qAnswer.trim()) { toast.error('اكتب الإجابة الصحيحة'); return; }
 
     const newQ: LessonQuestion = {
-      text: qText,
+      text: qText.trim(),
       type: qType,
       choices: qType === 'mcq' ? qChoices.filter(c => c.trim()) : undefined,
-      correctAnswer: qAnswer,
+      correctAnswer: qAnswer.trim(),
       points: qPoints,
     };
-    setQuestions([...questions, newQ]);
-    setQText(''); setQAnswer(''); setQChoices(['', '', '', '']); setQPoints(1); setQType('mcq');
+
+    if (editingQuestionIdx !== null) {
+      // Update existing question
+      const updated = [...questions];
+      updated[editingQuestionIdx] = newQ;
+      setQuestions(updated);
+      toast.success('تم تحديث السؤال');
+    } else {
+      setQuestions([...questions, newQ]);
+      toast.success('تم إضافة السؤال');
+    }
+    resetQuestionForm();
   };
 
   const removeQuestion = (idx: number) => {
     setQuestions(questions.filter((_, i) => i !== idx));
+    if (editingQuestionIdx === idx) resetQuestionForm();
   };
 
   const handleSave = async () => {
@@ -163,7 +195,15 @@ const LessonModal: React.FC<LessonModalProps> = ({ courseId, lesson, onClose, on
           <label className="mb-1 block text-sm font-bold">ملفات مرفقة</label>
           <input type="file" multiple onChange={e => setLessonFiles(e.target.files ? Array.from(e.target.files) : [])} className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-4 file:py-2 file:text-sm file:font-bold" />
           {lesson?.files && lesson.files.length > 0 && (
-            <p className="mt-2 text-xs text-muted-foreground">الملفات الحالية: {lesson.files.length}</p>
+            <div className="mt-2 space-y-1">
+              <p className="text-xs font-bold text-muted-foreground">الملفات الحالية:</p>
+              {lesson.files.map((f, fi) => (
+                <div key={fi} className="flex items-center gap-2 rounded-lg bg-muted/60 px-2 py-1 text-xs">
+                  <FileText className="size-3 text-muted-foreground" />
+                  <span className="truncate">{f.name}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -175,12 +215,29 @@ const LessonModal: React.FC<LessonModalProps> = ({ courseId, lesson, onClose, on
           {questions.length > 0 && (
             <div className="mb-3 space-y-2">
               {questions.map((q, i) => (
-                <div key={i} className="flex items-start justify-between rounded-lg bg-muted/60 px-3 py-2">
-                  <div className="text-xs">
-                    <p className="font-bold">{i + 1}. {q.text}</p>
-                    <p className="text-muted-foreground">{q.type === 'mcq' ? 'اختياري' : q.type === 'truefalse' ? 'صح/خطأ' : 'مقالي'} · {q.points} نقطة</p>
+                <div key={i} className={`rounded-lg border p-3 ${editingQuestionIdx === i ? 'border-primary bg-primary/5' : 'bg-muted/60'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 text-xs">
+                      <p className="font-bold">{i + 1}. {q.text}</p>
+                      <p className="text-muted-foreground">{q.type === 'mcq' ? 'اختياري' : q.type === 'truefalse' ? 'صح/خطأ' : 'مقالي'} · {q.points} نقطة</p>
+                      {q.type === 'mcq' && q.choices && q.choices.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {q.choices.map((c, ci) => (
+                            <span key={ci} className={`rounded px-1.5 py-0.5 text-[10px] ${c === q.correctAnswer ? 'bg-success/20 text-success font-bold' : 'bg-muted'}`}>
+                              {c}{c === q.correctAnswer ? ' ✓' : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {q.type !== 'mcq' && (
+                        <p className="mt-1 text-[10px] text-success">الإجابة: {q.correctAnswer}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-shrink-0 gap-1">
+                      <button onClick={() => startEditQuestion(i)} className="rounded p-1 text-primary hover:bg-primary/10" title="تعديل"><Edit className="size-3.5" /></button>
+                      <button onClick={() => removeQuestion(i)} className="rounded p-1 text-destructive hover:bg-destructive/10" title="حذف"><Trash2 className="size-3.5" /></button>
+                    </div>
                   </div>
-                  <button onClick={() => removeQuestion(i)} className="text-destructive hover:opacity-70"><Trash2 className="size-4" /></button>
                 </div>
               ))}
             </div>
@@ -218,7 +275,12 @@ const LessonModal: React.FC<LessonModalProps> = ({ courseId, lesson, onClose, on
               <input value={qAnswer} onChange={e => setQAnswer(e.target.value)} placeholder="الإجابة الصحيحة" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
             )}
 
-            <button onClick={addQuestion} type="button" className="w-full rounded-lg bg-muted px-3 py-2 text-sm font-bold hover:bg-accent">+ إضافة سؤال</button>
+            <button onClick={addQuestion} type="button" className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90">
+              {editingQuestionIdx !== null ? '✓ حفظ التعديل' : '+ إضافة سؤال'}
+            </button>
+            {editingQuestionIdx !== null && (
+              <button onClick={resetQuestionForm} type="button" className="w-full rounded-lg border border-border px-3 py-2 text-sm font-bold hover:bg-muted">إلغاء التعديل</button>
+            )}
           </div>
         </div>
 
@@ -258,6 +320,8 @@ export const ManageCourse: React.FC = () => {
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
+  const [studentsProgress, setStudentsProgress] = useState<{ lessons: Array<{ _id: string; title: string; order: number; questionsCount: number }>; students: Array<any> } | null>(null);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   const fetchLessons = async () => {
     if (!id) return;
@@ -267,6 +331,16 @@ export const ManageCourse: React.FC = () => {
       setLessons(response.data);
     } catch (error) { console.error('Failed to fetch lessons:', error); }
     finally { setLessonsLoading(false); }
+  };
+
+  const fetchStudentsProgress = async () => {
+    if (!id) return;
+    try {
+      setProgressLoading(true);
+      const response = await lessonsApi.getCourseStudentsProgress(id);
+      setStudentsProgress(response.data);
+    } catch (error) { console.error('Failed to fetch students progress:', error); }
+    finally { setProgressLoading(false); }
   };
 
   const fetchAssignments = async () => {
@@ -368,6 +442,7 @@ export const ManageCourse: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'assignments') fetchAssignments();
     if (activeTab === 'content') fetchLessons();
+    if (activeTab === 'students') fetchStudentsProgress();
   }, [activeTab, id]);
 
   if (loading) return <TeacherShellWrapper><Loader fullScreen text={t('common.loading')} /></TeacherShellWrapper>;
@@ -560,18 +635,126 @@ export const ManageCourse: React.FC = () => {
             </div>
           )}
 
-          {/* STUDENTS TAB */}
+          {/* STUDENTS TAB - with progress & grades */}
           {activeTab === 'students' && (
             <div>
-              <h3 className="mb-4 text-lg font-bold">الطلاب المسجلون</h3>
-              {course.enrollments && course.enrollments.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {course.enrollments.map((en: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-background p-4">
-                      <span className="flex size-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{en.student?.name?.charAt(0)?.toUpperCase() || 'S'}</span>
-                      <div><h4 className="text-sm font-bold">{en.student?.name || 'طالب'}</h4><p className="text-xs text-muted-foreground">{en.student?.email}</p></div>
+              <h3 className="mb-4 text-lg font-bold">الطلاب وتقدمهم في الدروس</h3>
+
+              {progressLoading ? (
+                <div className="flex justify-center py-12"><Loader text="جاري تحميل تقدم الطلاب..." /></div>
+              ) : course.enrollments && course.enrollments.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Summary cards */}
+                  {studentsProgress && studentsProgress.students.length > 0 && (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-border bg-background p-4">
+                        <p className="text-xs text-muted-foreground">إجمالي الطلاب</p>
+                        <p className="text-2xl font-bold">{studentsProgress.students.length}</p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background p-4">
+                        <p className="text-xs text-muted-foreground">متوسط المشاهدات</p>
+                        <p className="text-2xl font-bold">
+                          {studentsProgress.students.length > 0
+                            ? (studentsProgress.students.reduce((sum, s) => sum + s.viewedCount, 0) / studentsProgress.students.length).toFixed(1)
+                            : 0}
+                          <span className="text-sm text-muted-foreground"> / {studentsProgress.lessons.length}</span>
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-background p-4">
+                        <p className="text-xs text-muted-foreground">متوسط الدرجات</p>
+                        <p className="text-2xl font-bold">
+                          {studentsProgress.students.length > 0 && studentsProgress.students.some(s => s.totalMaxScore > 0)
+                            ? Math.round(studentsProgress.students.reduce((sum, s) => sum + (s.totalMaxScore > 0 ? (s.totalScore / s.totalMaxScore) * 100 : 0), 0) / studentsProgress.students.filter(s => s.totalMaxScore > 0).length)
+                            : 0}%
+                        </p>
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Students table */}
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr className="text-right">
+                          <th className="p-3 font-bold">الطالب</th>
+                          <th className="p-3 text-center font-bold">الدروس المشاهدة</th>
+                          <th className="p-3 text-center font-bold">إجابات مُرسلة</th>
+                          <th className="p-3 text-center font-bold">الدرجة الكلية</th>
+                          <th className="p-3 font-bold">تفاصيل الدروس</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(studentsProgress?.students || course.enrollments.map((en: any) => ({
+                          student: { _id: en.student?._id, name: en.student?.name, email: en.student?.email, avatar: en.student?.avatar },
+                          lessons: {},
+                          totalScore: 0,
+                          totalMaxScore: 0,
+                          viewedCount: 0,
+                          submittedCount: 0,
+                        }))).map((sp: any, i: number) => {
+                          const totalLessons = studentsProgress?.lessons.length || lessons.length;
+                          const percentage = sp.totalMaxScore > 0 ? Math.round((sp.totalScore / sp.totalMaxScore) * 100) : null;
+                          return (
+                            <tr key={i} className="border-t border-border hover:bg-muted/30">
+                              <td className="p-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                                    {sp.student?.name?.charAt(0)?.toUpperCase() || 'S'}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="truncate font-bold">{sp.student?.name || 'طالب'}</p>
+                                    <p className="truncate text-xs text-muted-foreground">{sp.student?.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="font-bold">{sp.viewedCount || 0}</span>
+                                <span className="text-xs text-muted-foreground"> / {totalLessons}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="font-bold">{sp.submittedCount || 0}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                {percentage !== null ? (
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${percentage >= 50 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                                    {sp.totalScore} / {sp.totalMaxScore} ({percentage}%)
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                <div className="flex flex-wrap gap-1">
+                                  {(studentsProgress?.lessons || []).map((lesson: any) => {
+                                    const lp = sp.lessons?.[lesson._id];
+                                    if (!lp) {
+                                      return <span key={lesson._id} title={`${lesson.title}: لم يفتح`} className="size-2.5 rounded-full bg-muted" />;
+                                    }
+                                    if (lp.submittedAt) {
+                                      const pct = lp.maxScore > 0 ? Math.round((lp.score / lp.maxScore) * 100) : 0;
+                                      return <span key={lesson._id} title={`${lesson.title}: ${lp.score}/${lp.maxScore} (${pct}%)`} className={`size-2.5 rounded-full ${pct >= 50 ? 'bg-success' : 'bg-destructive'}`} />;
+                                    }
+                                    if (lp.viewed) {
+                                      return <span key={lesson._id} title={`${lesson.title}: تمت المشاهدة`} className="size-2.5 rounded-full bg-primary" />;
+                                    }
+                                    return <span key={lesson._id} className="size-2.5 rounded-full bg-muted" />;
+                                  })}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-muted" /> لم يفتح</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-primary" /> تمت المشاهدة</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-success" /> نجح</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-destructive" /> رسب</span>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">

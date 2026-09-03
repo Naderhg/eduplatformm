@@ -9,6 +9,10 @@ import {
   uploadLessonVideo,
   uploadLessonFiles,
   reorderLessons,
+  markLessonViewed,
+  submitLessonAnswers,
+  getLessonProgress,
+  getCourseStudentsProgress,
 } from '../controllers/lesson.controller';
 import { protect, authorize } from '../middleware/auth';
 import { uploadVideo, uploadMultiple } from '../middleware/upload';
@@ -57,5 +61,18 @@ router.post('/course/:courseId/:lessonId/upload-files', authorize('TEACHER', 'AD
 
 // Reorder lessons
 router.put('/course/:courseId/reorder', authorize('TEACHER', 'ADMIN'), reorderLessons);
+
+// Student progress routes
+router.post('/:lessonId/mark-viewed', authorize('STUDENT', 'ADMIN'), markLessonViewed);
+router.post(
+  '/:lessonId/submit-answers',
+  authorize('STUDENT', 'ADMIN'),
+  [body('answers').isArray().withMessage('Answers array is required')],
+  submitLessonAnswers
+);
+router.get('/:lessonId/progress', getLessonProgress);
+
+// Teacher: get all students' progress for a course
+router.get('/course/:courseId/students-progress', authorize('TEACHER', 'ADMIN'), getCourseStudentsProgress);
 
 export default router;

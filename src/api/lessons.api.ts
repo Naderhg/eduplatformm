@@ -85,4 +85,22 @@ export const lessonsApi = {
   reorder: (courseId: string, lessons: { id: string; order: number }[]): Promise<{ success: boolean }> => {
     return axiosInstance.put(`/lessons/course/${courseId}/reorder`, { lessons }).then(res => res.data);
   },
+
+  // Student progress
+  markViewed: (lessonId: string): Promise<{ success: boolean; data: any }> => {
+    return axiosInstance.post(`/lessons/${lessonId}/mark-viewed`).then(res => res.data);
+  },
+
+  submitAnswers: (lessonId: string, answers: Array<{ questionIndex: number; answer: string }>): Promise<{ success: boolean; data: { score: number; maxScore: number; answers: any[]; progress: any } }> => {
+    return axiosInstance.post(`/lessons/${lessonId}/submit-answers`, { answers }).then(res => res.data);
+  },
+
+  getProgress: (lessonId: string): Promise<{ success: boolean; data: any }> => {
+    return axiosInstance.get(`/lessons/${lessonId}/progress`).then(res => res.data);
+  },
+
+  // Teacher: get all students' progress for a course
+  getCourseStudentsProgress: (courseId: string): Promise<{ success: boolean; data: { lessons: Array<{ _id: string; title: string; order: number; questionsCount: number }>; students: Array<any> } }> => {
+    return axiosInstance.get(`/lessons/course/${courseId}/students-progress`).then(res => res.data);
+  },
 };

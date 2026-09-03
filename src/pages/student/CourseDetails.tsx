@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { coursesApi, Course } from '../../api/courses.api';
-import { lessonsApi, Lesson } from '../../api/lessons.api';
+import { lessonsApi, Lesson, LessonQuestion } from '../../api/lessons.api';
 import { Loader } from '../../components/common/Loader';
 import { VideoPlayer } from '../../components/ui/VideoPlayer';
 import CommentSection from '../../components/common/CommentSection';
 import { useAuth } from '../../context/AuthContext';
 import {
   ArrowRight, Play, Download, BookOpen, User, Clock, FileText,
-  Video, HelpCircle, CheckCircle, ChevronDown, ChevronUp, Hash
+  Video, HelpCircle, CheckCircle, XCircle, ChevronDown, ChevronUp, Hash, Send, Award
 } from 'lucide-react';
 import { StudentShellWrapper } from './StudentShellWrapper';
 
@@ -33,6 +33,13 @@ export const CourseDetails: React.FC = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonsLoading, setLessonsLoading] = useState(true);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(searchParams.get('lesson') || null);
+
+  // Student answers state: { [lessonId]: { [questionIndex]: answer } }
+  const [answers, setAnswers] = useState<Record<string, Record<number, string>>>({});
+  // Submission results: { [lessonId]: { score, maxScore, answers: [{questionIndex, answer, correct}] } }
+  const [results, setResults] = useState<Record<string, { score: number; maxScore: number; answers: any[] } | null>>({});
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const markedViewedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -91,6 +98,50 @@ export const CourseDetails: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Mark lesson as viewed when expanded
+  const handleLessonExpand = (lessonId: string) => {
+    const isExpanded = expandedLesson === lessonId;
+    setExpandedLesson(isExpanded ? null : lessonId);
+    // Mark as viewed when expanding (only once per session)
+    if (!isExpanded && user?.role === 'STUDENT' && !markedViewedRef.current.has(lessonId)) {
+      markedViewedRef.current.add(lessonId);
+      lessonsApi.markViewed(lessonId).catch(() => { /* silent fail */ });
+    }
+  };
+
+  // Set answer for a question
+  const setAnswer = (lessonId: string, qIndex: number, answer: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [lessonId]: { ...(prev[lessonId] || {}), [qIndex]: answer },
+    }));
+  };
+
+  // Submit answers for a lesson
+  const handleSubmitAnswers = async (lesson: Lesson) => {
+    const lessonAnswers = answers[lesson._id] || {};
+    const unanswered = lesson.questions.filter((_, qi) => !lessonAnswers[qi]?.trim());
+    if (unanswered.length > 0) {
+      if (!window.confirm(`لديك ${unanswered.length} سؤال بدون إجابة. هل تريد الإرسال؟`)) return;
+    }
+
+    const formattedAnswers = lesson.questions.map((_, qi) => ({
+      questionIndex: qi,
+      answer: lessonAnswers[qi] || '',
+    }));
+
+    setSubmitting(lesson._id);
+    try {
+      const res = await lessonsApi.submitAnswers(lesson._id, formattedAnswers);
+      setResults(prev => ({ ...prev, [lesson._id]: res.data }));
+      toast.success(`تم الإرسال! نتيجتك: ${res.data.score}/${res.data.maxScore}`);
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || 'فشل الإرسال');
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   if (isLoading) {
@@ -197,7 +248,7 @@ export const CourseDetails: React.FC = () => {
                 return (
                   <div key={lesson._id} className="overflow-hidden rounded-xl border border-border bg-background">
                     {/* Lesson header */}
-                    <button onClick={() => setExpandedLesson(isExpanded ? null : lesson._id)} className="flex w-full items-center gap-3 p-4 text-right transition-colors hover:bg-muted/50">
+                    <button onClick={() => handleLessonExpand(lesson._id)} className="flex w-full items-center gap-3 p-4 text-right transition-colors hover:bg-muted/50">
                       <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm">{idx + 1}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold">{lesson.title}</p>
@@ -244,23 +295,136 @@ export const CourseDetails: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Lesson questions */}
+                        {/* Lesson questions - interactive */}
                         {lesson.questions && lesson.questions.length > 0 && (
                           <div>
-                            <h4 className="mb-2 flex items-center gap-1.5 text-sm font-bold"><HelpCircle className="size-4 text-primary" /> أسئلة الدرس ({lesson.questions.length})</h4>
+                            <h4 className="mb-3 flex items-center gap-1.5 text-sm font-bold"><HelpCircle className="size-4 text-primary" /> أسئلة الدرس ({lesson.questions.length})</h4>
                             <div className="space-y-3">
-                              {lesson.questions.map((q, qi) => (
-                                <div key={qi} className="rounded-xl border border-border bg-muted/30 p-4">
-                                  <div className="mb-2 flex items-start justify-between gap-2">
-                                    <p className="text-sm font-bold">{qi + 1}. {q.text}</p>
-                                    <span className="flex-shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{q.points} نقطة</span>
+                              {lesson.questions.map((q, qi) => {
+                                const lessonResult = results[lesson._id];
+                                const answerResult = lessonResult?.answers?.find(a => a.questionIndex === qi);
+                                const isAnswered = !!answerResult;
+                                const studentAnswer = answers[lesson._id]?.[qi] || '';
+
+                                return (
+                                  <div key={qi} className={`rounded-xl border p-4 ${isAnswered ? (answerResult.correct ? 'border-success/40 bg-success/5' : 'border-destructive/40 bg-destructive/5') : 'border-border bg-muted/30'}`}>
+                                    <div className="mb-2 flex items-start justify-between gap-2">
+                                      <p className="text-sm font-bold">{qi + 1}. {q.text}</p>
+                                      <span className="flex-shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{q.points} نقطة</span>
+                                    </div>
+
+                                    {/* Answer input - disabled after submission */}
+                                    <div className="mt-2">
+                                      {q.type === 'mcq' && q.choices && (
+                                        <div className="space-y-1.5">
+                                          {q.choices.map((choice, ci) => (
+                                            <label key={ci} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm transition-colors ${
+                                              isAnswered
+                                                ? choice === q.correctAnswer
+                                                  ? 'border-success bg-success/10'
+                                                  : choice === studentAnswer
+                                                    ? 'border-destructive bg-destructive/10'
+                                                    : 'border-border opacity-60'
+                                                : studentAnswer === choice
+                                                  ? 'border-primary bg-primary/5'
+                                                  : 'border-border hover:bg-muted/50'
+                                            } ${isAnswered ? 'cursor-default' : ''}`}>
+                                              <input
+                                                type="radio"
+                                                name={`q-${lesson._id}-${qi}`}
+                                                checked={studentAnswer === choice}
+                                                disabled={isAnswered}
+                                                onChange={() => setAnswer(lesson._id, qi, choice)}
+                                                className="size-4"
+                                              />
+                                              <span>{choice}</span>
+                                              {isAnswered && choice === q.correctAnswer && <CheckCircle className="mr-auto size-4 text-success" />}
+                                              {isAnswered && choice === studentAnswer && choice !== q.correctAnswer && <XCircle className="mr-auto size-4 text-destructive" />}
+                                            </label>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {q.type === 'truefalse' && (
+                                        <div className="flex gap-3">
+                                          {['true', 'false'].map(opt => (
+                                            <label key={opt} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border p-2.5 text-sm font-bold transition-colors ${
+                                              isAnswered
+                                                ? opt === q.correctAnswer
+                                                  ? 'border-success bg-success/10 text-success'
+                                                  : opt === studentAnswer
+                                                    ? 'border-destructive bg-destructive/10 text-destructive'
+                                                    : 'border-border opacity-60'
+                                                : studentAnswer === opt
+                                                  ? 'border-primary bg-primary/5 text-primary'
+                                                  : 'border-border hover:bg-muted/50'
+                                            } ${isAnswered ? 'cursor-default' : ''}`}>
+                                              <input
+                                                type="radio"
+                                                name={`q-${lesson._id}-${qi}`}
+                                                checked={studentAnswer === opt}
+                                                disabled={isAnswered}
+                                                onChange={() => setAnswer(lesson._id, qi, opt)}
+                                                className="size-4"
+                                              />
+                                              {opt === 'true' ? 'صح' : 'خطأ'}
+                                              {isAnswered && opt === q.correctAnswer && <CheckCircle className="size-4" />}
+                                              {isAnswered && opt === studentAnswer && opt !== q.correctAnswer && <XCircle className="size-4" />}
+                                            </label>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {q.type === 'short' && (
+                                        <div>
+                                          <textarea
+                                            value={studentAnswer}
+                                            onChange={e => setAnswer(lesson._id, qi, e.target.value)}
+                                            disabled={isAnswered}
+                                            rows={2}
+                                            placeholder="اكتب إجابتك هنا..."
+                                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-70"
+                                          />
+                                          {isAnswered && (
+                                            <p className={`mt-1.5 text-xs ${answerResult.correct ? 'text-success' : 'text-destructive'}`}>
+                                              {answerResult.correct ? '✓ إجابة صحيحة' : '✗ إجابة خاطئة'}
+                                              {!answerResult.correct && ` · الإجابة الصحيحة: ${q.correctAnswer}`}
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Show correct answer after submission for mcq/truefalse */}
+                                    {isAnswered && q.type !== 'short' && !answerResult.correct && (
+                                      <p className="mt-2 text-xs text-success">الإجابة الصحيحة: {q.type === 'truefalse' ? (q.correctAnswer === 'true' ? 'صح' : 'خطأ') : q.correctAnswer}</p>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    النوع: {q.type === 'mcq' ? 'اختياري' : q.type === 'truefalse' ? 'صح/خطأ' : 'مقالي'}
-                                  </p>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
+
+                            {/* Submit button or results summary */}
+                            {results[lesson._id] ? (
+                              <div className="mt-4 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 p-4">
+                                <div className="flex items-center gap-2">
+                                  <Award className="size-5 text-primary" />
+                                  <span className="text-sm font-bold">النتيجة: {results[lesson._id]!.score} / {results[lesson._id]!.maxScore}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {results[lesson._id]!.maxScore > 0 ? Math.round((results[lesson._id]!.score / results[lesson._id]!.maxScore) * 100) : 0}%
+                                </span>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleSubmitAnswers(lesson)}
+                                disabled={submitting === lesson._id}
+                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+                              >
+                                <Send className="size-4" />
+                                {submitting === lesson._id ? 'جاري الإرسال...' : 'إرسال الإجابات'}
+                              </button>
+                            )}
                           </div>
                         )}
 
