@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { assignmentsApi } from '../../api/assignments.api';
 import { Loader } from '../../components/common/Loader';
+import { DashboardShell, PageHeader, StatCard } from '../../components/dashboard/DashboardShell';
+import { teacherNav, teacherComingSoon } from '../../lib/dashboard-data';
 import { toast } from 'react-toastify';
-import './TeacherStudents.css';
+import { Search, Users, BookOpen, FileText, TrendingUp } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -28,37 +30,24 @@ export const TeacherStudents: React.FC = () => {
     totalStudents: 0,
     totalCourses: 0,
     totalAssignments: 0,
-    averageScore: 0
+    averageScore: 0,
   });
 
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      // Fetch all students enrolled in teacher's courses
       const response = await assignmentsApi.getTeacherStudents();
-      console.log('Teacher students:', response);
-      
-      // Calculate stats
       const totalStudents = response.length;
       let totalCourses = 0;
       let totalAssignments = 0;
       let totalScore = 0;
-      
       response.forEach((student: Student) => {
         totalCourses += student.enrolledCourses || 0;
         totalAssignments += student.completedAssignments || 0;
         totalScore += student.averageScore || 0;
       });
-
       const averageScore = totalStudents > 0 ? Math.round(totalScore / totalStudents) : 0;
-
-      setStats({
-        totalStudents,
-        totalCourses,
-        totalAssignments,
-        averageScore
-      });
-      
+      setStats({ totalStudents, totalCourses, totalAssignments, averageScore });
       setStudents(response);
       setFilteredStudents(response);
     } catch (error: any) {
@@ -70,11 +59,11 @@ export const TeacherStudents: React.FC = () => {
     }
   };
 
-  // Filter students based on search term
   useEffect(() => {
-    const filtered = students.filter(student =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = students.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     setFilteredStudents(filtered);
   }, [searchTerm, students]);
@@ -83,137 +72,90 @@ export const TeacherStudents: React.FC = () => {
     fetchStudents();
   }, []);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
   if (loading) {
-    return <Loader fullScreen text={t('common.loading')} />;
+    return (
+      <DashboardShell roleLabel="مدرس" nav={teacherNav} comingSoon={teacherComingSoon}>
+        <Loader fullScreen text={t('common.loading')} />
+      </DashboardShell>
+    );
   }
 
   return (
-    <div className="teacher-students p-3 sm:p-5 max-w-6xl mx-auto">
-      <div className="page-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="page-title text-xl sm:text-2xl font-bold text-foreground mb-1">{t('teacher.students.title')}</h1>
-          <p className="page-subtitle text-sm sm:text-base text-muted-foreground">{t('teacher.students.description')}</p>
-        </div>
-        <div className="header-actions">
-          <div className="search-box">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input 
-              type="text" 
-              placeholder={t('teacher.students.searchPlaceholder')} 
-              className="search-input bg-transparent outline-none text-foreground placeholder-muted-foreground text-sm w-full"
-              value={searchTerm}
-              onChange={handleSearchChange}
-            />
-          </div>
-        </div>
-      </div>
+    <DashboardShell roleLabel="مدرس" nav={teacherNav} comingSoon={teacherComingSoon}>
+      <PageHeader
+        title={t('teacher.students.title')}
+        description={t('teacher.students.description')}
+      />
 
       {/* Stats */}
-      <div className="students-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6 sm:mb-8">
-        <div className="stat-card bg-card border border-border rounded-lg p-4 sm:p-5 shadow-sm flex items-center gap-3 sm:gap-4">
-          <div className="stat-icon stat-icon-info w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg width="16 sm:24" height="16 sm:24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M21 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4 2v2" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value text-xl sm:text-2xl font-bold text-foreground">{stats.totalStudents}</span>
-            <span className="stat-label text-xs sm:text-sm text-muted-foreground">{t('teacher.students.totalStudents')}</span>
-          </div>
-        </div>
-        <div className="stat-card bg-card border border-border rounded-lg p-4 sm:p-5 shadow-sm flex items-center gap-3 sm:gap-4">
-          <div className="stat-icon stat-icon-success w-10 h-10 sm:w-12 sm:h-12 bg-success/10 text-success rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg width="16 sm:24" height="16 sm:24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="22 12 18 12 12 12 6" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value text-xl sm:text-2xl font-bold text-foreground">{stats.totalCourses}</span>
-            <span className="stat-label text-xs sm:text-sm text-muted-foreground">{t('teacher.students.totalEnrollments')}</span>
-          </div>
-        </div>
-        <div className="stat-card bg-card border border-border rounded-lg p-4 sm:p-5 shadow-sm flex items-center gap-3 sm:gap-4">
-          <div className="stat-icon stat-icon-warning w-10 h-10 sm:w-12 sm:h-12 bg-warning/10 text-warning rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg width="16 sm:24" height="16 sm:24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 2 14 20 10" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value text-xl sm:text-2xl font-bold text-foreground">{stats.totalAssignments}</span>
-            <span className="stat-label text-xs sm:text-sm text-muted-foreground">{t('teacher.students.completedAssignments')}</span>
-          </div>
-        </div>
-        <div className="stat-card bg-card border border-border rounded-lg p-4 sm:p-5 shadow-sm flex items-center gap-3 sm:gap-4">
-          <div className="stat-icon stat-icon-primary w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg width="16 sm:24" height="16 sm:24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <polyline points="17 7 12 7 17" />
-              <polyline points="7 7 12 7 17" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value text-xl sm:text-2xl font-bold text-foreground">{stats.averageScore}%</span>
-            <span className="stat-label text-xs sm:text-sm text-muted-foreground">{t('teacher.students.classAverage')}</span>
-          </div>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label={t('teacher.students.totalStudents')} value={stats.totalStudents} />
+        <StatCard label={t('teacher.students.totalEnrollments')} value={stats.totalCourses} />
+        <StatCard label={t('teacher.students.completedAssignments')} value={stats.totalAssignments} />
+        <StatCard label={t('teacher.students.classAverage')} value={`${stats.averageScore}%`} />
       </div>
 
-      {/* Students Table */}
-      <div className="students-table-container bg-card border border-border rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="students-table w-full">
-            <thead>
-              <tr className="bg-secondary/50 border-b border-border">
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('teacher.students.student')}</th>
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">{t('teacher.courses.title')}</th>
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">{t('teacher.assignments.title')}</th>
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('teacher.students.averageScore')}</th>
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Max Score</th>
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">{t('teacher.students.lastActive')}</th>
-                <th className="text-left px-4 py-3 text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('common.actions')}</th>
+      {/* Search */}
+      <div className="mt-6 mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-soft sm:max-w-sm">
+        <Search className="size-5 flex-shrink-0 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder={t('teacher.students.searchPlaceholder')}
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      {/* Students table */}
+      {filteredStudents.length > 0 ? (
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
+          <table className="w-full text-right text-sm">
+            <thead className="bg-muted/60 text-xs text-muted-foreground">
+              <tr>
+                <th className="p-3 font-bold">اسم الطالب</th>
+                <th className="hidden p-3 font-bold sm:table-cell">{t('teacher.courses.title')}</th>
+                <th className="hidden p-3 font-bold md:table-cell">{t('teacher.assignments.title')}</th>
+                <th className="p-3 font-bold">{t('teacher.students.averageScore')}</th>
+                <th className="hidden p-3 font-bold lg:table-cell">Max Score</th>
+                <th className="hidden p-3 font-bold sm:table-cell">{t('teacher.students.lastActive')}</th>
+                <th className="p-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-secondary/30 transition-colors">
-                  <td className="px-4 py-4">
-                    <div className="student-cell flex items-center gap-3">
-                      <div className="student-avatar w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-secondary text-primary-foreground rounded-full flex items-center justify-center font-semibold text-sm sm:text-base flex-shrink-0">
+                <tr key={student.id} className="border-t border-border transition-colors hover:bg-muted/30">
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-bold text-primary-foreground">
                         {student.name.charAt(0)}
-                      </div>
-                      <div className="student-info">
-                        <div className="student-name font-medium text-foreground text-sm sm:text-base">{student.name}</div>
-                        <div className="student-email text-xs sm:text-sm text-muted-foreground">{student.email}</div>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-bold">{student.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{student.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-sm text-foreground hidden sm:table-cell">{student.enrolledCourses}</td>
-                  <td className="px-4 py-4 text-sm text-foreground hidden md:table-cell">{student.completedAssignments}</td>
-                  <td className="px-4 py-4">
-                    <span className={`score-badge inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      student.averageScore >= 90 ? 'bg-success/10 text-success' : 
-                      student.averageScore >= 70 ? 'bg-warning/10 text-warning' : 
+                  <td className="hidden p-3 text-muted-foreground sm:table-cell">{student.enrolledCourses}</td>
+                  <td className="hidden p-3 text-muted-foreground md:table-cell">{student.completedAssignments}</td>
+                  <td className="p-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                      student.averageScore >= 90 ? 'bg-success/10 text-success' :
+                      student.averageScore >= 70 ? 'bg-warning/10 text-warning' :
                       'bg-destructive/10 text-destructive'
                     }`}>
                       {student.averageScore}%
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-sm text-foreground hidden lg:table-cell">{student.maxScore || 0}</td>
-                  <td className="px-4 py-4 text-sm text-muted-foreground hidden sm:table-cell">
+                  <td className="hidden p-3 text-muted-foreground lg:table-cell">{student.maxScore || 0}</td>
+                  <td className="hidden p-3 text-muted-foreground sm:table-cell">
                     {new Date(student.lastActive).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-4">
-                    <Link to={`/teacher/students/${student.id}`} className="btn btn-ghost btn-sm inline-flex items-center gap-1 px-3 py-1.5 border border-border rounded-md text-xs sm:text-sm font-medium text-foreground bg-card hover:bg-accent transition-colors">
+                  <td className="p-3">
+                    <Link
+                      to={`/teacher/students/${student.id}`}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold transition-colors hover:bg-muted"
+                    >
                       <span className="hidden sm:inline">{t('teacher.students.viewProfile')}</span>
                       <span className="sm:hidden">{t('common.view')}</span>
                     </Link>
@@ -223,7 +165,17 @@ export const TeacherStudents: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className="mt-6 rounded-2xl border border-border bg-card p-12 text-center shadow-soft">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
+            <Users className="size-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-bold">لا يوجد طلاب</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {searchTerm ? 'لا توجد نتائج مطابقة لبحثك' : 'لم يقم أي طالب بالتسجيل في كورساتك بعد'}
+          </p>
+        </div>
+      )}
+    </DashboardShell>
   );
 };

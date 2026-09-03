@@ -175,7 +175,7 @@ export const CreateAssignment: React.FC = () => {
       const assignmentData: any = {
         title,
         description,
-        availableFrom: availableFrom || undefined,
+        availableFrom: availableFrom ? new Date(availableFrom).toISOString() : undefined,
         dueDate: new Date(dueDate).toISOString(),
         maxScore: totalPoints,
         type: assignmentType,

@@ -4,41 +4,59 @@ import { useAuth } from '../../hooks/useAuth';
 import { coursesApi, CreateCourseData } from '../../api/courses.api';
 import { uploadApi } from '../../api/upload.api';
 import { Loader } from '../../components/common/Loader';
-import { FileText, X, Upload, File, BookOpen, Video, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText, X, Upload, File, BookOpen, Video, CheckCircle2, AlertCircle, Loader2, Copy } from 'lucide-react';
 import { toast } from 'react-toastify';
 import './CreateCourse.css';
 
 /* ── Reusable upload-progress widget ── */
-type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
+type UploadStatus = 'idle' | 'uploading' | 'processing' | 'success' | 'error';
 interface UploadState { status: UploadStatus; progress: number; fileName: string; errorMsg?: string; }
 const initUpload = (): UploadState => ({ status: 'idle', progress: 0, fileName: '' });
 
 interface UploadProgressProps { state: UploadState; }
 const UploadProgress: React.FC<UploadProgressProps> = ({ state }) => {
   if (state.status === 'idle') return null;
+
+  const isProcessing = state.status === 'processing';
+  const isUploading  = state.status === 'uploading';
+
   return (
     <div className="upload-progress-wrap mt-3">
-      {/* File name row */}
+      {/* File name + status row */}
       <div className="flex items-center gap-2 mb-1">
-        {state.status === 'uploading' && <Loader2 size={14} className="upload-spinner text-primary" />}
-        {state.status === 'success'   && <CheckCircle2 size={14} className="text-green-500" />}
-        {state.status === 'error'     && <AlertCircle  size={14} className="text-red-500" />}
-        <span className="text-xs text-muted-foreground truncate max-w-[260px]">{state.fileName}</span>
-        <span className="ml-auto text-xs font-semibold tabular-nums">
-          {state.status === 'uploading' ? `${state.progress}%` :
-           state.status === 'success'   ? 'تم الرفع ✓' : 'فشل الرفع ✗'}
+        {(isUploading || isProcessing) && <Loader2 size={14} className="upload-spinner text-primary flex-shrink-0" />}
+        {state.status === 'success' && <CheckCircle2 size={14} className="text-green-500 flex-shrink-0" />}
+        {state.status === 'error'   && <AlertCircle  size={14} className="text-red-500 flex-shrink-0" />}
+        <span className="text-xs text-muted-foreground truncate max-w-[220px]">{state.fileName}</span>
+        <span className="ml-auto text-xs font-semibold tabular-nums whitespace-nowrap">
+          {isUploading    ? `${state.progress}%` :
+           isProcessing   ? 'معالجة...' :
+           state.status === 'success' ? 'تم الرفع ✓' : 'فشل الرفع ✗'}
         </span>
       </div>
-      {/* Bar */}
+
+      {/* Progress bar */}
       <div className="upload-progress-bg">
-        <div
-          className={`upload-progress-fill ${
-            state.status === 'success' ? 'bg-green-500' :
-            state.status === 'error'   ? 'bg-red-500'   : 'bg-primary'
-          }`}
-          style={{ width: state.status === 'success' ? '100%' : `${state.progress}%` }}
-        />
+        {isProcessing ? (
+          /* Animated shimmer bar while Cloudinary processes */
+          <div className="upload-progress-shimmer" />
+        ) : (
+          <div
+            className={`upload-progress-fill ${
+              state.status === 'success' ? 'bg-green-500' :
+              state.status === 'error'   ? 'bg-red-500'   : 'bg-primary'
+            }`}
+            style={{ width: state.status === 'success' ? '100%' : `${state.progress}%` }}
+          />
+        )}
       </div>
+
+      {/* Processing hint */}
+      {isProcessing && (
+        <p className="text-xs text-muted-foreground mt-1">
+          جاري رفع الفيديو على Cloudinary، قد يستغرق بضع دقائق...
+        </p>
+      )}
       {state.status === 'error' && state.errorMsg && (
         <p className="text-xs text-red-500 mt-1">{state.errorMsg}</p>
       )}
@@ -125,6 +143,7 @@ const CreateCourse: React.FC = () => {
   const [thumbnail, setThumbnail] = useState<FileWithPreview | null>(null);
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState('');
+  const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
 
   // Upload progress states
   const [thumbUpload,  setThumbUpload]  = useState<UploadState>(initUpload());
@@ -210,8 +229,12 @@ const CreateCourse: React.FC = () => {
     setVideoUpload({ status: 'uploading', progress: 0, fileName: file.name });
 
     try {
-      const response = await uploadApi.uploadVideo(file, (pct) =>
-        setVideoUpload(prev => ({ ...prev, progress: pct }))
+      const response = await uploadApi.uploadVideo(
+        file,
+        // Phase 1: browser → backend progress
+        (pct) => setVideoUpload(prev => ({ ...prev, progress: pct })),
+        // Phase 2: backend → Cloudinary (no percentage, just "processing")
+        ()    => setVideoUpload(prev => ({ ...prev, status: 'processing', progress: 100 }))
       );
 
       setFormData(prev => ({ ...prev, videoUrl: response.data.url }));
@@ -373,10 +396,15 @@ const CreateCourse: React.FC = () => {
       console.log('Files array length:', courseData.files.length);
 
       // Submit to API
-      await coursesApi.create(courseData);
-
-      // Redirect to courses list
-      navigate('/teacher/courses');
+      const response: any = await coursesApi.create(courseData);
+      const newCourseId = response?.data?._id || response?._id || response?.data?.id || response?.id;
+      if (newCourseId) {
+        setCreatedCourseId(newCourseId);
+        toast.success('تم إنشاء الكورس بنجاح!');
+      } else {
+        toast.success('تم إنشاء الكورس بنجاح!');
+        navigate('/teacher/courses');
+      }
     } catch (err) {
       console.error('Error creating course:', err);
       setError('Failed to create course. Please try again.');
@@ -386,8 +414,46 @@ const CreateCourse: React.FC = () => {
   };
 
   // Show loading state
-  if (isLoading) {
-    return <Loader fullScreen text="Creating course..." />;
+  if (isLoading && !createdCourseId) {
+    return <Loader fullScreen text="جاري إنشاء الكورس..." />;
+  }
+
+  // Show course ID modal after successful creation
+  if (createdCourseId) {
+    const copyId = () => {
+      navigator.clipboard.writeText(createdCourseId);
+      toast.success('تم نسخ ID الكورس');
+    };
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto max-w-lg rounded-2xl border border-border bg-card p-8 text-center shadow-soft">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10 text-success">
+            <CheckCircle2 className="size-8" />
+          </div>
+          <h2 className="mb-2 text-2xl font-bold">تم إنشاء الكورس بنجاح! 🎉</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            احتفظ بـ ID الكورس التالي وشاركه مع طلابك ليتمكنوا من التسجيل فيه عبر صفحة البحث.
+          </p>
+          <div className="mb-6 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-4">
+            <p className="mb-1 text-xs font-bold text-muted-foreground">معرّف الكورس (Course ID)</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded-lg bg-muted px-3 py-2 text-sm font-bold text-primary" dir="ltr">{createdCourseId}</code>
+              <button onClick={copyId} type="button" className="flex-shrink-0 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+                <Copy className="size-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <button onClick={() => navigate(`/teacher/courses/${createdCourseId}/manage`)} type="button" className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+              إدارة الكورس
+            </button>
+            <button onClick={() => navigate('/teacher/courses')} type="button" className="rounded-xl border border-border px-5 py-2.5 text-sm font-bold transition-colors hover:bg-muted">
+              رجوع للكورسات
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -551,52 +617,61 @@ const CreateCourse: React.FC = () => {
           {/* Course Video */}
           <div className="bg-card dark:bg-card border border-border rounded-lg p-6 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">فيديو تعريفي بالكورس</h2>
-            <div
-              className={`border-2 border-dashed rounded-md p-6 text-center transition-colors bg-secondary/50
-                ${videoUpload.status === 'uploading' ? 'border-primary cursor-not-allowed' : 'border-border cursor-pointer hover:border-primary'}`}
-              onClick={videoUpload.status === 'uploading' ? undefined : triggerVideoInput}
-            >
-              {formData.videoUrl && videoUpload.status === 'success' ? (
-                <div className="relative inline-flex flex-col items-center gap-2">
-                  <CheckCircle2 className="h-12 w-12 text-green-500" />
-                  <p className="text-sm font-medium text-green-600">تم رفع الفيديو بنجاح</p>
-                  <p className="text-xs text-muted-foreground truncate max-w-xs">{videoUpload.fileName}</p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFormData(prev => ({ ...prev, videoUrl: '' }));
-                      setVideoUpload(initUpload());
-                    }}
-                    className="mt-1 px-3 py-1 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10 transition-colors"
+            {(() => {
+              const busy = videoUpload.status === 'uploading' || videoUpload.status === 'processing';
+              return (
+                <>
+                  <div
+                    className={`border-2 border-dashed rounded-md p-6 text-center transition-colors bg-secondary/50
+                      ${busy ? 'border-primary cursor-not-allowed' : 'border-border cursor-pointer hover:border-primary'}`}
+                    onClick={busy ? undefined : triggerVideoInput}
                   >
-                    إزالة وإعادة الرفع
-                  </button>
-                </div>
-              ) : videoUpload.status === 'uploading' ? (
-                <div className="space-y-2 pointer-events-none">
-                  <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
-                  <p className="text-sm font-medium text-primary">جاري رفع الفيديو...</p>
-                </div>
-              ) : (
-                <div className="space-y-2 pointer-events-none">
-                  <Video className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-primary">اضغط للرفع</span> أو اسحب وأفلت
-                  </p>
-                  <p className="text-xs text-muted-foreground">MP4, WebM حتى 50MB</p>
-                </div>
-              )}
-              <input
-                type="file"
-                ref={videoInputRef}
-                onChange={handleVideoChange}
-                accept="video/*"
-                className="hidden"
-                disabled={videoUpload.status === 'uploading'}
-              />
-            </div>
-            <UploadProgress state={videoUpload} />
+                    {formData.videoUrl && videoUpload.status === 'success' ? (
+                      <div className="inline-flex flex-col items-center gap-2">
+                        <CheckCircle2 className="h-12 w-12 text-green-500" />
+                        <p className="text-sm font-medium text-green-600">تم رفع الفيديو بنجاح</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-xs">{videoUpload.fileName}</p>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setFormData(p => ({ ...p, videoUrl: '' })); setVideoUpload(initUpload()); }}
+                          className="mt-1 px-3 py-1 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10 transition-colors"
+                        >
+                          إزالة وإعادة الرفع
+                        </button>
+                      </div>
+                    ) : videoUpload.status === 'processing' ? (
+                      <div className="space-y-2 pointer-events-none">
+                        <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                        <p className="text-sm font-medium text-primary">جاري المعالجة على Cloudinary...</p>
+                        <p className="text-xs text-muted-foreground">يرجى الانتظار، قد يستغرق دقيقة أو أكثر</p>
+                      </div>
+                    ) : busy ? (
+                      <div className="space-y-2 pointer-events-none">
+                        <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                        <p className="text-sm font-medium text-primary">جاري رفع الفيديو...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 pointer-events-none">
+                        <Video className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium text-primary">اضغط للرفع</span> أو اسحب وأفلت
+                        </p>
+                        <p className="text-xs text-muted-foreground">MP4, WebM حتى 50MB</p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={videoInputRef}
+                      onChange={handleVideoChange}
+                      accept="video/*"
+                      className="hidden"
+                      disabled={busy}
+                    />
+                  </div>
+                  <UploadProgress state={videoUpload} />
+                </>
+              );
+            })()}
           </div>
 
           {/* Course Requirements */}
@@ -733,7 +808,7 @@ const CreateCourse: React.FC = () => {
 
           {/* Form Actions */}
           {(() => {
-            const anyUploading = [thumbUpload, videoUpload, filesUpload].some(u => u.status === 'uploading');
+            const anyUploading = [thumbUpload, videoUpload, filesUpload].some(u => u.status === 'uploading' || u.status === 'processing');
             return (
               <div className="flex justify-end space-x-4 pt-6">
                 <button

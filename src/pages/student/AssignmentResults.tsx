@@ -5,6 +5,7 @@ import { Loader } from '../../components/common/Loader';
 import { toast } from 'react-toastify';
 import { Trophy, Medal, Award } from 'lucide-react';
 import './AssignmentResults.css';
+import { StudentShellWrapper } from './StudentShellWrapper';
 
 export const AssignmentResults: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -119,6 +120,7 @@ export const AssignmentResults: React.FC = () => {
     : 0;
 
   return (
+    <StudentShellWrapper>
     <div className="assignment-results p-3 sm:p-5 max-w-6xl mx-auto">
       <div className="page-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8 p-4 sm:p-5 bg-card border border-border rounded-lg shadow-sm">
         <button 
@@ -282,5 +284,6 @@ export const AssignmentResults: React.FC = () => {
         )}
       </div>
     </div>
+    </StudentShellWrapper>
   );
 };

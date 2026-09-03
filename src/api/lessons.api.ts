@@ -1,11 +1,28 @@
 import axiosInstance from './axios';
 
+export interface LessonQuestion {
+  _id?: string;
+  text: string;
+  type: 'mcq' | 'truefalse' | 'short';
+  choices?: string[];
+  correctAnswer: string;
+  points: number;
+}
+
+export interface LessonFile {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+}
+
 export interface Lesson {
   _id: string;
   title: string;
   description: string;
   videoUrl?: string;
   files: LessonFile[];
+  questions: LessonQuestion[];
   course: string;
   teacher: {
     _id: string;
@@ -18,18 +35,12 @@ export interface Lesson {
   updatedAt: string;
 }
 
-export interface LessonFile {
-  name: string;
-  url: string;
-  size: number;
-  type: string;
-}
-
 export interface CreateLessonData {
   title: string;
   description: string;
   videoUrl?: string;
   files?: LessonFile[];
+  questions?: LessonQuestion[];
   order?: number;
   isPublished?: boolean;
 }
@@ -58,24 +69,16 @@ export const lessonsApi = {
   uploadVideo: (courseId: string, lessonId: string, file: File): Promise<{ success: boolean; data: any }> => {
     const formData = new FormData();
     formData.append('video', file);
-    
     return axiosInstance.post(`/lessons/course/${courseId}/${lessonId}/upload-video`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     }).then(res => res.data);
   },
 
   uploadFiles: (courseId: string, lessonId: string, files: File[]): Promise<{ success: boolean; data: any }> => {
     const formData = new FormData();
-    files.forEach(file => {
-      formData.append('files', file);
-    });
-    
+    files.forEach(file => formData.append('files', file));
     return axiosInstance.post(`/lessons/course/${courseId}/${lessonId}/upload-files`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     }).then(res => res.data);
   },
 

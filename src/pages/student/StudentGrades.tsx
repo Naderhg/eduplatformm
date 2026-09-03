@@ -1,5 +1,6 @@
 import React from 'react';
 import './StudentGrades.css';
+import { StudentShellWrapper } from './StudentShellWrapper';
 
 // Mock grades data
 const grades = [
@@ -28,6 +29,7 @@ export const StudentGrades: React.FC = () => {
   const overallAverage = grades.reduce((acc, course) => acc + course.overallGrade, 0) / grades.length;
 
   return (
+    <StudentShellWrapper>
     <div className="student-grades">
       <div className="page-header">
         <div>
@@ -137,5 +139,6 @@ export const StudentGrades: React.FC = () => {
         ))}
       </div>
     </div>
+    </StudentShellWrapper>
   );
 };

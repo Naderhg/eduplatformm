@@ -35,7 +35,10 @@
     "quickActions": "إجراءات سريعة",
     "manage": "إدارة",
     "updated": "تم التحديث",
-    "settings":"الاعدادات"
+    "settings":"الاعدادات",
+    "graded": "تم التصحيح",
+    "due": "موعد التسليم",
+    "view": "عرض"
   },
   "navigation": {
     "dashboard": "لوحة التحكم",

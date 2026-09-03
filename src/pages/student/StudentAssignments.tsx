@@ -6,6 +6,7 @@ import { Loader } from '../../components/common/Loader';
 import { toast } from 'react-toastify';
 import { RefreshCw } from 'lucide-react';
 import './StudentAssignments.css';
+import { StudentShellWrapper } from './StudentShellWrapper';
 
 export const StudentAssignments: React.FC = () => {
   const { user } = useAuth();
@@ -105,6 +106,7 @@ export const StudentAssignments: React.FC = () => {
   const filteredAssignments = getFilteredAssignments();
 
   return (
+    <StudentShellWrapper>
     <div className="student-assignments">
       <div className="page-header">
         <div>
@@ -241,5 +243,6 @@ export const StudentAssignments: React.FC = () => {
         })}
       </div>
     </div>
+    </StudentShellWrapper>
   );
 };

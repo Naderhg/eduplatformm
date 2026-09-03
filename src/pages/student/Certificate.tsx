@@ -4,6 +4,7 @@ import { assignmentsApi } from '../../api/assignments.api';
 import { Loader } from '../../components/common/Loader';
 import { toast } from 'react-toastify';
 import './Certificate.css';
+import { StudentShellWrapper } from './StudentShellWrapper';
 
 export const Certificate: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +52,7 @@ export const Certificate: React.FC = () => {
   const { studentName, assignmentTitle, courseName, score, maxScore, percentage, teacherName, completedDate, certificateId } = certificateData;
 
   return (
+    <StudentShellWrapper>
     <div className="certificate-page">
       <div className="certificate-actions no-print">
         <button onClick={() => navigate(`/student/assignments/${id}/results`)} className="btn btn-ghost">← Back to Results</button>
@@ -117,5 +119,6 @@ export const Certificate: React.FC = () => {
         </div>
       </div>
     </div>
+    </StudentShellWrapper>
   );
 };

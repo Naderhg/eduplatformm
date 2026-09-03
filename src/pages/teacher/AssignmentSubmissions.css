@@ -240,7 +240,7 @@
 }
 
 .submission-date {
-  color: #3b82f6;
+  color: #1677ff;
 }
 
 .graded-date {
@@ -399,7 +399,7 @@
 
 .grade-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #1677ff;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -431,7 +431,7 @@
 
 .feedback-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #1677ff;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 

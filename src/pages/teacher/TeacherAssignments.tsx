@@ -3,16 +3,14 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { assignmentsApi, Assignment } from '../../api/assignments.api';
 import { Loader } from '../../components/common/Loader';
+import { DashboardShell, PageHeader, StatCard } from '../../components/dashboard/DashboardShell';
+import { teacherNav, teacherComingSoon } from '../../lib/dashboard-data';
 import { toast } from 'react-toastify';
-import { Plus, Eye, EyeOff, Edit, Trash2 } from 'lucide-react';
-import './TeacherAssignments.css';
+import { Plus, Eye, EyeOff, Edit, FileText, Clock, Award, Users } from 'lucide-react';
 
-// Extended interface for teacher view with submissions
 interface TeacherAssignment extends Assignment {
   submissions?: any[];
-  course?: {
-    title: string;
-  };
+  course?: { title: string };
 }
 
 export const TeacherAssignments: React.FC = () => {
@@ -23,24 +21,19 @@ export const TeacherAssignments: React.FC = () => {
   const [stats, setStats] = useState({
     totalAssignments: 0,
     pendingSubmissions: 0,
-    gradedSubmissions: 0
+    gradedSubmissions: 0,
   });
 
   const handlePublishToggle = async (assignmentId: string, currentStatus: string) => {
     try {
       setPublishing(assignmentId);
-      
       if (currentStatus === 'published') {
-        // Unpublish (set to draft)
         await assignmentsApi.update(assignmentId, { status: 'draft' });
         toast.success(t('teacher.assignments.assignmentPublished'));
       } else {
-        // Publish
         await assignmentsApi.publishAssignment(assignmentId);
         toast.success(t('teacher.assignments.assignmentPublishedSuccess'));
       }
-      
-      // Refresh assignments list
       fetchAssignments();
     } catch (error: any) {
       console.error('Failed to toggle assignment status:', error);
@@ -53,7 +46,7 @@ export const TeacherAssignments: React.FC = () => {
   const handleCertificateToggle = async (assignmentId: string, currentEnabled: boolean) => {
     try {
       await assignmentsApi.update(assignmentId, { certificateEnabled: !currentEnabled });
-      toast.success(!currentEnabled ? 'Certificate enabled successfully!' : 'Certificate disabled successfully!');
+      toast.success(!currentEnabled ? 'تم تفعيل الشهادة بنجاح!' : 'تم إلغاء تفعيل الشهادة');
       fetchAssignments();
     } catch (error: any) {
       console.error('Failed to toggle certificate status:', error);
@@ -64,15 +57,10 @@ export const TeacherAssignments: React.FC = () => {
   const fetchAssignments = async () => {
     try {
       setLoading(true);
-      // Fetch all assignments created by this teacher
-      const response = await assignmentsApi.getTeacherAssignments() as TeacherAssignment[];
-      console.log('Teacher assignments:', response);
-      
-      // Calculate stats
+      const response = (await assignmentsApi.getTeacherAssignments()) as TeacherAssignment[];
       const totalAssignments = response.length;
       let pendingSubmissions = 0;
       let gradedSubmissions = 0;
-      
       response.forEach((assignment: TeacherAssignment) => {
         if (assignment.submissions) {
           assignment.submissions.forEach((submission: any) => {
@@ -84,13 +72,7 @@ export const TeacherAssignments: React.FC = () => {
           });
         }
       });
-
-      setStats({
-        totalAssignments,
-        pendingSubmissions,
-        gradedSubmissions
-      });
-      
+      setStats({ totalAssignments, pendingSubmissions, gradedSubmissions });
       setAssignments(response);
     } catch (error: any) {
       console.error('Failed to fetch assignments:', error);
@@ -106,156 +88,142 @@ export const TeacherAssignments: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <Loader fullScreen text={t('common.loading')} />;
+    return (
+      <DashboardShell roleLabel="مدرس" nav={teacherNav} comingSoon={teacherComingSoon}>
+        <Loader fullScreen text={t('common.loading')} />
+      </DashboardShell>
+    );
   }
 
   return (
-    <div className="teacher-assignments">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">{t('teacher.assignments.title')}</h1>
-          <p className="page-subtitle">{t('teacher.assignments.description')}</p>
-        </div>
-        <Link to="/teacher/assignments/create" className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          {t('teacher.assignments.createAssignment')}
-        </Link>
-      </div>
+    <DashboardShell roleLabel="مدرس" nav={teacherNav} comingSoon={teacherComingSoon}>
+      <PageHeader
+        title={t('teacher.assignments.title')}
+        description={t('teacher.assignments.description')}
+        action={
+          <Link to="/teacher/assignments/create" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+            <Plus className="size-4" /> {t('teacher.assignments.createAssignment')}
+          </Link>
+        }
+      />
 
       {/* Stats */}
-      <div className="assignment-stats">
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-info">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 2 14 20 10" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.totalAssignments}</span>
-            <span className="stat-label">{t('teacher.assignments.totalAssignments')}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-warning">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.pendingSubmissions}</span>
-            <span className="stat-label">{t('teacher.assignments.pendingReview')}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-success">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.gradedSubmissions}</span>
-            <span className="stat-label">{t('commonggraded')}</span>
-          </div>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label={t('teacher.assignments.totalAssignments')} value={stats.totalAssignments} />
+        <StatCard label={t('teacher.assignments.pendingReview')} value={stats.pendingSubmissions} />
+        <StatCard label={t('common.graded')} value={stats.gradedSubmissions} />
       </div>
 
-      {/* Assignments List */}
-      <section className="assignments-section">
-        <div className="section-header">
-          <h2 className="section-title">{t('teacher.assignments.allAssignments')}</h2>
-          <span className="badge">{assignments.length} {t('teacher.assignments.assignments')}</span>
-        </div>
-
-        <div className="assignments-list">
+      {/* Assignments list */}
+      {assignments.length > 0 ? (
+        <div className="mt-6 space-y-4">
           {assignments.map((assignment) => (
-            <div key={assignment.id} className="assignment-card card card-hover">
-              <div className="assignment-content">
-                <div className="assignment-header">
-                  <h3 className="assignment-title">{assignment.title}</h3>
-                  <div className="assignment-badges">
-                    <span className={`badge ${assignment.submissions?.length > 0 ? 'badge-info' : 'badge-secondary'}`}>
-                      {assignment.submissions?.length || 0} {t('teacher.assignments.submissions')}
-                    </span>
-                    <span className={`badge ${assignment.status === 'published' ? 'badge-success' : 'badge-warning'}`}>
+            <div
+              key={assignment.id}
+              className="rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:shadow-card"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                {/* Left: info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-bold">{assignment.title}</h3>
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      assignment.status === 'published' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                    }`}>
                       {assignment.status === 'published' ? t('common.published') : t('common.draft')}
                     </span>
                     {assignment.certificateEnabled && (
-                      <span className="badge" style={{ backgroundColor: '#d4af37', color: 'white', fontWeight: 600 }}>
-                        🎓 Certificate
+                      <span className="inline-flex items-center gap-1 rounded-full bg-soft-yellow px-3 py-1 text-xs font-bold text-warm-foreground">
+                        <Award className="size-3" /> شهادة
                       </span>
                     )}
                   </div>
-                </div>
-                <p className="assignment-course">{assignment.course?.title || 'No course'}</p>
-                <div className="assignment-meta">
-                  <span className="assignment-due">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    {t('common.due')}: {new Date(assignment.dueDate).toLocaleDateString()}
-                  </span>
-                  <span className="assignment-score">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="22 12 18 12 12 12 6" />
-                    </svg>
-                    {assignment.maxScore} {t('teacher.assignments.points')}
-                  </span>
-                </div>
-                <div className="assignment-description">
-                  {assignment.description?.length > 100 
-                    ? `${assignment.description.substring(0, 100)}...`
-                    : assignment.description || 'No description'
-                  }
-                </div>
-              </div>
-              <div className="assignment-actions">
-                <button
-                  onClick={() => handlePublishToggle(assignment.id, assignment.status || 'draft')}
-                  disabled={publishing === assignment.id}
-                  className={`btn ${assignment.status === 'published' ? 'btn-warning' : 'btn-success'}`}
-                >
-                  {publishing === assignment.id ? (
-                    t('common.loading')
-                  ) : assignment.status === 'published' ? (
-                    <>
-                      <EyeOff className="w-4 h-4 mr-2" />
-                      {t('teacher.assignments.setToDraft')}
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-4 h-4 mr-2" />
-                      {t('teacher.assignments.publish')}
-                    </>
+
+                  <p className="mt-1 text-sm text-muted-foreground">{assignment.course?.title || 'بدون كورس'}</p>
+
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Users className="size-4" /> {assignment.submissions?.length || 0} {t('teacher.assignments.submissions')}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="size-4" /> {t('common.due')}: {new Date(assignment.dueDate).toLocaleDateString()}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FileText className="size-4" /> {assignment.maxScore} {t('teacher.assignments.points')}
+                    </span>
+                  </div>
+
+                  {assignment.description && (
+                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                      {assignment.description.length > 100
+                        ? `${assignment.description.substring(0, 100)}...`
+                        : assignment.description}
+                    </p>
                   )}
-                </button>
-                <Link to={`/teacher/assignments/${assignment.id}/submissions`} className="btn btn-primary">
-                  {t('teacher.assignments.viewSubmissions')}
-                </Link>
-                <Link to={`/teacher/assignments/${assignment.id}/edit`} className="btn btn-secondary">
-                  <Edit className="w-4 h-4 mr-2" />
-                  {t('common.edit')}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => handleCertificateToggle(assignment.id, assignment.certificateEnabled || false)}
-                  className="btn"
-                  style={{
-                    backgroundColor: assignment.certificateEnabled ? '#fef3c7' : '#f3f4f6',
-                    color: assignment.certificateEnabled ? '#d97706' : '#374151',
-                    border: '1px solid',
-                    borderColor: assignment.certificateEnabled ? '#f59e0b' : '#d1d5db'
-                  }}
-                >
-                  🎓 {assignment.certificateEnabled ? 'Disable Cert' : 'Enable Cert'}
-                </button>
+                </div>
+
+                {/* Right: actions */}
+                <div className="flex flex-shrink-0 flex-wrap gap-2">
+                  <button
+                    onClick={() => handlePublishToggle(assignment.id, assignment.status || 'draft')}
+                    disabled={publishing === assignment.id}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-opacity disabled:opacity-60 ${
+                      assignment.status === 'published'
+                        ? 'bg-warning/10 text-warning hover:opacity-80'
+                        : 'bg-success/10 text-success hover:opacity-80'
+                    }`}
+                  >
+                    {publishing === assignment.id ? (
+                      t('common.loading')
+                    ) : assignment.status === 'published' ? (
+                      <><EyeOff className="size-4" /> {t('teacher.assignments.setToDraft')}</>
+                    ) : (
+                      <><Eye className="size-4" /> {t('teacher.assignments.publish')}</>
+                    )}
+                  </button>
+
+                  <Link
+                    to={`/teacher/assignments/${assignment.id}/submissions`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+                  >
+                    {t('teacher.assignments.viewSubmissions')}
+                  </Link>
+
+                  <Link
+                    to={`/teacher/assignments/${assignment.id}/edit`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-bold transition-colors hover:bg-muted"
+                  >
+                    <Edit className="size-4" /> {t('common.edit')}
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCertificateToggle(assignment.id, assignment.certificateEnabled || false)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                      assignment.certificateEnabled
+                        ? 'border-warm bg-soft-yellow text-warm-foreground'
+                        : 'border-border bg-muted text-muted-foreground hover:bg-accent'
+                    }`}
+                  >
+                    <Award className="size-4" /> {assignment.certificateEnabled ? 'إلغاء الشهادة' : 'تفعيل الشهادة'}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </section>
-    </div>
+      ) : (
+        <div className="mt-6 rounded-2xl border border-border bg-card p-12 text-center shadow-soft">
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted">
+            <FileText className="size-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-bold">لا توجد واجبات</h3>
+          <p className="mt-1 text-sm text-muted-foreground">أنشئ أول واجب لطلابك</p>
+          <Link to="/teacher/assignments/create" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
+            <Plus className="size-4" /> {t('teacher.assignments.createAssignment')}
+          </Link>
+        </div>
+      )}
+    </DashboardShell>
   );
 };

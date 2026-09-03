@@ -35,7 +35,10 @@
     "quickActions": "Quick Actions",
     "manage": "Manage",
     "updated": "Updated",
-    "settings":"Settings"
+    "settings":"Settings",
+    "graded": "Graded",
+    "due": "Due",
+    "view": "View"
   },
   "navigation": {
     "dashboard": "Dashboard",

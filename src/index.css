@@ -1,117 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ========================
+   Design System - EduPort-style
+   ======================== */
 
 :root {
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 215 30% 20%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 215 30% 20%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+  --popover-foreground: 215 30% 20%;
 
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
+  /* Primary: #1677ff -> hsl(215 100% 54%) */
+  --primary: 215 100% 54%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 215 30% 96%;
+  --secondary-foreground: 215 40% 30%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 215 20% 96%;
+  --muted-foreground: 215 12% 50%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent: 215 100% 95%;
+  --accent-foreground: 215 100% 40%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --border: 215 20% 92%;
+  --input: 215 20% 92%;
+  --ring: 215 100% 54%;
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  --sidebar-background: 0 0% 98%;
+  /* Brand colors */
+  --navy: 215 50% 20%;
+  --navy-foreground: 215 20% 98%;
 
-  --sidebar-foreground: 240 5.3% 26.1%;
+  --warm: 215 100% 54%;
+  --warm-foreground: 0 0% 100%;
 
-  --sidebar-primary: 240 5.9% 10%;
+  --success: 155 65% 38%;
+  --success-foreground: 0 0% 100%;
 
-  --sidebar-primary-foreground: 0 0% 98%;
+  --info: 215 100% 54%;
+  --info-foreground: 0 0% 100%;
 
-  --sidebar-accent: 240 4.8% 95.9%;
+  --soft-yellow: 50 80% 95%;
+  --soft-purple: 280 50% 95%;
+  --soft-blue: 215 100% 95%;
+  --soft-rose: 10 70% 95%;
 
-  --sidebar-accent-foreground: 240 5.9% 10%;
-
-  --sidebar-border: 220 13% 91%;
-
-  --sidebar-ring: 217.2 91.2% 59.8%;
-}
-
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 215 20% 30%;
+  --sidebar-primary: 215 100% 54%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+  --sidebar-accent: 215 100% 95%;
+  --sidebar-accent-foreground: 215 100% 40%;
+  --sidebar-border: 215 20% 90%;
+  --sidebar-ring: 215 100% 54%;
 
-  /* Old color variables used throughout the app */
-  --color-background: #0f172a;
-  --color-surface: #1e293b;
-  --color-surface-hover: #334155;
-  --color-border: #334155;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-muted: #94a3b8;
-  --color-text-inverse: #0f172a;
-  --color-primary: #3b82f6;
-  --color-primary-light: #dbeafe;
-  --color-secondary: #8b5cf6;
-  --color-secondary-light: #e9d5ff;
+  /* Legacy compatibility (used by existing dashboard pages) */
+  --color-primary: #1677ff;
+  --color-primary-hover: #0958d9;
+  --color-primary-light: #e6f4ff;
+  --color-primary-dark: #0958d9;
+  --color-secondary: #1677ff;
+  --color-secondary-hover: #0958d9;
+  --color-secondary-light: #e6f4ff;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f0f7ff;
+  --color-border: #d6e4f0;
+  --color-border-light: #eef6fc;
+  --color-text-primary: #102a43;
+  --color-text-secondary: #3a5870;
+  --color-text-muted: #7a99b0;
+  --color-text-inverse: #ffffff;
   --color-success: #10b981;
   --color-success-light: #d1fae5;
   --color-warning: #f59e0b;
   --color-warning-light: #fef3c7;
   --color-error: #ef4444;
   --color-error-light: #fee2e2;
-  --color-info: #06b6d4;
-  --color-info-light: #cffafe;
+  --color-info: #1677ff;
+  --color-info-light: #e6f4ff;
+}
+
+.dark {
+  --background: 215 30% 10%;
+  --foreground: 215 20% 95%;
+
+  --card: 215 30% 14%;
+  --card-foreground: 215 20% 95%;
+
+  --popover: 215 30% 14%;
+  --popover-foreground: 215 20% 95%;
+
+  --primary: 215 100% 54%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 215 25% 18%;
+  --secondary-foreground: 215 20% 95%;
+
+  --muted: 215 25% 18%;
+  --muted-foreground: 215 15% 70%;
+
+  --accent: 215 40% 25%;
+  --accent-foreground: 215 30% 90%;
+
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 215 20% 95%;
+
+  --border: 0 0% 100% / 12%;
+  --input: 0 0% 100% / 15%;
+  --ring: 215 100% 54%;
+
+  --navy: 215 30% 14%;
+  --navy-foreground: 215 20% 95%;
+
+  --soft-yellow: 50 50% 30%;
+  --soft-purple: 280 40% 30%;
+  --soft-blue: 215 50% 25%;
+  --soft-rose: 10 50% 30%;
+
+  --color-background: #0a1622;
+  --color-surface: #122236;
+  --color-surface-hover: #1c3148;
+  --color-border: #1c3148;
+  --color-text-primary: #e8f0fa;
+  --color-text-secondary: #a8c0d6;
+  --color-text-muted: #6a8aa6;
+  --color-text-inverse: #0a1622;
+  --color-primary: #1677ff;
+  --color-primary-light: #1c3148;
+  --color-secondary: #4096ff;
+  --color-secondary-light: #1c3148;
+  --color-success: #10b981;
+  --color-success-light: #0a2618;
+  --color-warning: #f59e0b;
+  --color-warning-light: #2a1f08;
+  --color-error: #ef4444;
+  --color-error-light: #2a0e0e;
+  --color-info: #1677ff;
+  --color-info-light: #122236;
 }
 
 @layer base {
@@ -121,6 +159,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Cairo', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .dark body {
@@ -144,5 +183,28 @@ All colors MUST be HSL.
 
   .dark .sidebar {
     background-color: hsl(var(--sidebar-background)) !important;
+  }
+}
+
+/* ========================
+   Site Utilities
+   ======================== */
+
+@layer utilities {
+  .container-page {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 80rem;
+    padding-inline: 1rem;
+  }
+
+  .marker-underline {
+    background-image: linear-gradient(
+      to top,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary)) 38%,
+      transparent 38%
+    );
+    padding-inline: 0.15em;
   }
 }

@@ -17,16 +17,22 @@ i18n
         translation: arTranslations
       }
     },
-    lng: 'en', // default language
-    fallbackLng: 'en',
+    lng: 'ar', // default language - Arabic is primary
+    fallbackLng: 'ar',
     debug: false,
     interpolation: {
       escapeValue: false
     },
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage']
+      order: ['localStorage', 'htmlTag', 'navigator'],
+      caches: ['localStorage'],
+      convertDetectedLanguage: (lng: string) => lng
     }
   });
+
+// Force Arabic as default on first visit (when no localStorage preference exists)
+if (!localStorage.getItem('i18nextLng')) {
+  i18n.changeLanguage('ar');
+}
 
 export default i18n;

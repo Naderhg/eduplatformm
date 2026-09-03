@@ -51,48 +51,52 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// Create a separate instance for file uploads with longer timeout
+// ── Helper: add auth token to any instance ──────────────────────────
+function addAuthInterceptor(instance: ReturnType<typeof axios.create>) {
+  instance.interceptors.request.use(
+    (config) => {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const token = localStorage.getItem('token');
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+}
+
+// ── Generic file upload instance (images, PDFs …) — 2 minutes ───────
 export const uploadInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // 60 seconds for file uploads
-  headers: {
-    'Content-Type': 'multipart/form-data',
-    'Accept': 'application/json',
-  },
+  timeout: 120000,           // 2 minutes
+  headers: { 'Content-Type': 'multipart/form-data', 'Accept': 'application/json' },
   withCredentials: true,
 });
-
-// Add request interceptor for upload instance
-uploadInstance.interceptors.request.use(
-  (config) => {
-    // Check if localStorage is available (browser environment)
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
+addAuthInterceptor(uploadInstance);
+uploadInstance.interceptors.response.use(
+  (r) => r,
   (error) => {
+    console.error('Upload Error:', error);
+    if (error.response?.data?.message) error.message = error.response.data.message;
+    else if (error.code === 'ECONNABORTED') error.message = 'Upload timeout. Please try again with a smaller file.';
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor for upload instance
-uploadInstance.interceptors.response.use(
-  (response) => response,
+// ── Video upload instance — 10 minutes (Cloudinary re-upload takes time) ──
+export const videoUploadInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 600000,           // 10 minutes
+  headers: { 'Content-Type': 'multipart/form-data', 'Accept': 'application/json' },
+  withCredentials: true,
+});
+addAuthInterceptor(videoUploadInstance);
+videoUploadInstance.interceptors.response.use(
+  (r) => r,
   (error) => {
-    console.error('Upload Error:', error);
-    
-    if (error.response?.data?.message) {
-      const errorMessage = error.response.data.message;
-      console.error('Backend Upload Error Message:', errorMessage);
-      error.message = errorMessage;
-    } else if (error.code === 'ECONNABORTED') {
-      error.message = 'Upload timeout. Please try again with a smaller file or check your connection.';
-    }
-    
+    console.error('Video Upload Error:', error);
+    if (error.response?.data?.message) error.message = error.response.data.message;
+    else if (error.code === 'ECONNABORTED') error.message = 'Video upload timed out. Please try a smaller video or check your connection.';
     return Promise.reject(error);
   }
 );

@@ -192,7 +192,7 @@
 
 .svp-progress-fill {
   height: 100%;
-  background: #3b82f6;
+  background: #1677ff;
   border-radius: 4px;
   transition: width 0.1s linear;
   pointer-events: none;
@@ -307,7 +307,7 @@
   width: 6px;
   height: 90px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: #1677ff;
 }
 
 /* ================================================================

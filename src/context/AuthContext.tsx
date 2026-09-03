@@ -8,7 +8,7 @@ import {
   RegisterData 
 } from '../api/auth.api';
 
-export type UserRole = 'TEACHER' | 'STUDENT';
+export type UserRole = 'TEACHER' | 'STUDENT' | 'ADMIN';
 
 export interface User {
   id: string;

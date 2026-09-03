@@ -5,6 +5,7 @@ import { assignmentsApi } from '../../api/assignments.api';
 import { Loader } from '../../components/common/Loader';
 import { toast } from 'react-toastify';
 import './AssignmentDetail.css';
+import { StudentShellWrapper } from './StudentShellWrapper';
 
 export interface MCQQuestion {
   _id?: string;
@@ -218,6 +219,7 @@ export const AssignmentDetail: React.FC = () => {
   const daysLeft = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
   return (
+    <StudentShellWrapper>
     <div className="assignment-detail">
       <div className="page-header">
         <button 
@@ -330,5 +332,6 @@ export const AssignmentDetail: React.FC = () => {
         </form>
       </div>
     </div>
+    </StudentShellWrapper>
   );
 };

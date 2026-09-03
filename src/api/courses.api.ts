@@ -44,6 +44,7 @@ export interface CreateCourseData {
   duration: number;
   requirements: string[];
   learningOutcomes: string[];
+  status?: 'draft' | 'published' | 'archived';
   thumbnail?: string;
   videoUrl?: string;
   files?: {

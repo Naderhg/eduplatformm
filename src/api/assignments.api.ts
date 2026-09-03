@@ -77,6 +77,8 @@ export interface CreateAssignmentData {
   dueDate: string;
   maxScore: number;
   status?: 'draft' | 'published' | 'closed';
+  certificateEnabled?: boolean;
+  certificatePassingScore?: number;
 }
 
 // Mock assignments data

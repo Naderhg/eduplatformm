@@ -16,30 +16,38 @@ interface LanguageProviderProps {
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { i18n, t } = useTranslation();
-  const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
-  const [isRTL, setIsRTL] = useState(i18n.language === 'ar');
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'ar');
+  const [isRTL, setIsRTL] = useState(true);
 
   useEffect(() => {
-    console.log('Language changed to:', i18n.language);
-    setCurrentLanguage(i18n.language);
-    setIsRTL(i18n.language === 'ar');
-    
+    // Determine effective language - default to Arabic
+    const lang = i18n.language || 'ar';
+    const isArabic = lang === 'ar' || lang.startsWith('ar');
+    setCurrentLanguage(lang);
+    setIsRTL(isArabic);
+
     // Update document direction and language
-    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = i18n.language;
+    document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+
+    // Ensure body font matches language
+    if (isArabic) {
+      document.body.style.fontFamily = "'Cairo', 'Inter', sans-serif";
+    } else {
+      document.body.style.fontFamily = "'Inter', 'Cairo', sans-serif";
+    }
   }, [i18n.language]);
 
   const changeLanguage = (lang: string) => {
-    console.log('Changing language to:', lang);
     i18n.changeLanguage(lang);
   };
 
   return (
-    <LanguageContext.Provider value={{ 
-      currentLanguage, 
-      changeLanguage, 
+    <LanguageContext.Provider value={{
+      currentLanguage,
+      changeLanguage,
       isRTL,
-      t 
+      t
     }}>
       {children}
     </LanguageContext.Provider>

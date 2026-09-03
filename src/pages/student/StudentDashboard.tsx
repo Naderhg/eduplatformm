@@ -4,184 +4,130 @@ import { useAuth } from '../../hooks/useAuth';
 import { useFetch } from '../../hooks/useFetch';
 import { coursesApi, Course } from '../../api/courses.api';
 import { Loader } from '../../components/common/Loader';
-import './StudentDashboard.css';
-
-// Mock progress data
-const courseProgress = [
-  { courseId: '1', progress: 65 },
-  { courseId: '2', progress: 30 },
-];
+import { DashboardShell, PageHeader, StatCard } from '../../components/dashboard/DashboardShell';
+import { studentNav, studentComingSoon } from '../../lib/dashboard-data';
+import { BookOpen, Clock, TrendingUp, Award, Play, Calendar, FileText } from 'lucide-react';
 
 const upcomingAssignments = [
-  {
-    id: '1',
-    title: 'Build a Simple HTML Page',
-    courseName: 'Introduction to Web Development',
-    dueDate: '2024-03-01T23:59:00Z',
-    status: 'pending',
-  },
-  {
-    id: '2',
-    title: 'Style Your Portfolio',
-    courseName: 'Introduction to Web Development',
-    dueDate: '2024-03-15T23:59:00Z',
-    status: 'pending',
-  },
+  { id: '1', title: 'Build a Simple HTML Page', courseName: 'Introduction to Web Development', dueDate: '2026-09-01T23:59:00Z', status: 'pending' },
+  { id: '2', title: 'Style Your Portfolio', courseName: 'Introduction to Web Development', dueDate: '2026-09-15T23:59:00Z', status: 'pending' },
 ];
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
-  
+
   const fetchCourses = useCallback(() => coursesApi.getEnrolled(), []);
   const { data: courses, isLoading } = useFetch<Course[]>(fetchCourses);
 
   if (isLoading) {
-    return <Loader fullScreen text="Loading dashboard..." />;
+    return (
+      <DashboardShell roleLabel="طالب" nav={studentNav} comingSoon={studentComingSoon}>
+        <Loader fullScreen text="جاري التحميل..." />
+      </DashboardShell>
+    );
   }
 
+  const enrolledCount = courses?.length || 0;
+  const firstName = user?.name?.split(' ')[0] || 'طالب';
+
   return (
-    <div className="student-dashboard">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Welcome back, {user?.name?.split(' ')[0]}! 👋</h1>
-          <p className="page-subtitle">Continue your learning journey</p>
-        </div>
+    <DashboardShell roleLabel="طالب" nav={studentNav} comingSoon={studentComingSoon}>
+      <PageHeader title={`أهلاً ${firstName} 👋`} description="ملخص يومك الدراسي" />
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="الكورسات المسجلة" value={enrolledCount} />
+        <StatCard label="الدروس المكتملة" value="12" hint="من 28" />
+        <StatCard label="واجبات متبقية" value={upcomingAssignments.length} hint="أقربها قريباً" />
+        <StatCard label="المعدل العام" value="88%" hint="+3% عن الشهر الماضي" />
       </div>
 
-      {/* Progress Overview */}
-      <div className="progress-overview">
-        <div className="progress-card card">
-          <div className="progress-card-header">
-            <div className="progress-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </div>
-            <div>
-              <span className="progress-value">{courses?.length || 0}</span>
-              <span className="progress-label">Enrolled Courses</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="progress-card card">
-          <div className="progress-card-header">
-            <div className="progress-icon progress-icon-success">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </div>
-            <div>
-              <span className="progress-value">12</span>
-              <span className="progress-label">Completed Lessons</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="progress-card card">
-          <div className="progress-card-header">
-            <div className="progress-icon progress-icon-warning">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-            <div>
-              <span className="progress-value">{upcomingAssignments.length}</span>
-              <span className="progress-label">Pending Assignments</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Continue Learning */}
-      <section className="dashboard-section">
-        <div className="section-header">
-          <h2 className="section-title">Continue Learning</h2>
-        </div>
-
-        {courses && courses.length > 0 ? (
-          <div className="learning-cards">
-            {courses.slice(0, 2).map((course) => {
-              const progress = courseProgress.find(p => p.courseId === course._id)?.progress || 0;
-              return (
-                <div key={course._id} className="learning-card card card-hover">
-                  <div className="learning-thumbnail">
-                    <div className="learning-placeholder">
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="learning-content">
-                    <h3 className="learning-title">{course.title}</h3>
-                    <p className="learning-instructor">by {course.teacher.name}</p>
-                    <div className="learning-progress">
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+      {/* Continue Learning + Upcoming Assignments */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Continue Learning */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <h2 className="mb-4 text-lg font-bold">متابعة التعلم</h2>
+          {courses && courses.length > 0 ? (
+            <div className="space-y-3">
+              {courses.slice(0, 3).map((course) => {
+                const progress = Math.floor(Math.random() * 60) + 20;
+                return (
+                  <Link key={course._id} to={`/student/courses/${course._id}`}
+                    className="flex items-center gap-3 rounded-xl bg-muted/60 px-3 py-3 transition-colors hover:bg-accent">
+                    <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <BookOpen className="size-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{course.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">بقلم {course.teacher?.name || 'مدرس'}</p>
+                      <div className="mt-1.5 h-1.5 rounded-full bg-muted">
+                        <div className="h-1.5 rounded-full bg-primary" style={{ width: `${progress}%` }} />
                       </div>
-                      <span className="progress-text">{progress}% complete</span>
                     </div>
-                    <Link to={`/student/courses/${course._id}`} className="btn btn-primary mt-4">
-                      Continue
-                    </Link>
+                    <Play className="size-5 flex-shrink-0 text-primary" />
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-muted">
+                <BookOpen className="size-7 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-bold">لا توجد كورسات مسجلة</p>
+              <p className="mt-1 text-xs text-muted-foreground">تصفح الكورسات المتاحة وابدأ التعلم</p>
+              <Link to="/student/courses" className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+                تصفح الكورسات
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* Upcoming Assignments */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold">الواجبات القادمة</h2>
+            <Link to="/student/assignments" className="text-sm font-bold text-primary">عرض الكل</Link>
+          </div>
+          <div className="space-y-3">
+            {upcomingAssignments.map((a) => {
+              const dueDate = new Date(a.dueDate);
+              const daysLeft = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              return (
+                <Link key={a.id} to={`/student/assignments/${a.id}`}
+                  className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-3 transition-colors hover:bg-accent">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{a.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{a.courseName}</p>
                   </div>
-                </div>
+                  <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${daysLeft <= 3 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'}`}>
+                      {daysLeft > 0 ? `${daysLeft} يوم` : 'متأخر'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{dueDate.toLocaleDateString()}</span>
+                  </div>
+                </Link>
               );
             })}
           </div>
-        ) : (
-          <div className="empty-state card">
-            <div className="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-            </div>
-            <h3>No enrolled courses</h3>
-            <p>Browse available courses to start learning</p>
-            <Link to="/student/courses" className="btn btn-primary">Browse Courses</Link>
-          </div>
-        )}
-      </section>
+        </section>
+      </div>
 
-      {/* Upcoming Assignments */}
-      <section className="dashboard-section">
-        <div className="section-header">
-          <h2 className="section-title">Upcoming Assignments</h2>
-          <Link to="/student/assignments" className="btn btn-ghost">View All</Link>
+      {/* Recent Activity / Quick Stats */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <TrendingUp className="size-8 text-success" />
+          <div><p className="text-2xl font-bold">96%</p><p className="text-xs text-muted-foreground">نسبة الحضور</p></div>
         </div>
-
-        <div className="assignments-list">
-          {upcomingAssignments.map((assignment) => {
-            const dueDate = new Date(assignment.dueDate);
-            const isOverdue = dueDate < new Date();
-            const daysLeft = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-            
-            return (
-              <div key={assignment.id} className="assignment-item card">
-                <div className="assignment-info">
-                  <h3 className="assignment-title">{assignment.title}</h3>
-                  <p className="assignment-course">{assignment.courseName}</p>
-                </div>
-                <div className="assignment-due">
-                  <span className={`due-badge ${isOverdue ? 'overdue' : daysLeft <= 3 ? 'soon' : ''}`}>
-                    {isOverdue ? 'Overdue' : `${daysLeft} days left`}
-                  </span>
-                  <span className="due-date">{dueDate.toLocaleDateString()}</span>
-                </div>
-                <Link to={`/student/assignments/${assignment.id}`} className="btn btn-secondary">
-                  Start
-                </Link>
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <Award className="size-8 text-warm-foreground" />
+          <div><p className="text-2xl font-bold">2</p><p className="text-xs text-muted-foreground">شهادات مكتملة</p></div>
         </div>
-      </section>
-    </div>
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
+          <Clock className="size-8 text-primary" />
+          <div><p className="text-2xl font-bold">24س</p><p className="text-xs text-muted-foreground">وقت الدراسة هذا الأسبوع</p></div>
+        </div>
+      </div>
+    </DashboardShell>
   );
 };
