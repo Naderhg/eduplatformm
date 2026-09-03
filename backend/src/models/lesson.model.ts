@@ -1,10 +1,20 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface ILessonQuestion {
+  _id?: mongoose.Types.ObjectId;
+  text: string;
+  type: 'mcq' | 'truefalse' | 'short';
+  choices?: string[];      // for mcq
+  correctAnswer: string;   // index for mcq, 'true'/'false' for truefalse, text for short
+  points: number;
+}
+
 export interface ILesson extends Document {
   title: string;
   description: string;
   videoUrl?: string;
   files: ILessonFile[];
+  questions: ILessonQuestion[];
   course: mongoose.Types.ObjectId;
   teacher: mongoose.Types.ObjectId;
   order: number;
@@ -21,22 +31,18 @@ export interface ILessonFile {
 }
 
 const lessonFileSchema = new Schema<ILessonFile>({
-  name: {
-    type: String,
-    required: true,
-  },
-  url: {
-    type: String,
-    required: true,
-  },
-  size: {
-    type: Number,
-    required: true,
-  },
-  type: {
-    type: String,
-    required: true,
-  },
+  name: { type: String, required: true },
+  url: { type: String, required: true },
+  size: { type: Number, required: true },
+  type: { type: String, required: true },
+});
+
+const lessonQuestionSchema = new Schema<ILessonQuestion>({
+  text: { type: String, required: true, trim: true },
+  type: { type: String, enum: ['mcq', 'truefalse', 'short'], default: 'mcq' },
+  choices: { type: [String], default: [] },
+  correctAnswer: { type: String, required: true },
+  points: { type: Number, default: 1, min: 1 },
 });
 
 const lessonSchema = new Schema<ILesson>({
@@ -56,6 +62,10 @@ const lessonSchema = new Schema<ILesson>({
   },
   files: {
     type: [lessonFileSchema],
+    default: [],
+  },
+  questions: {
+    type: [lessonQuestionSchema],
     default: [],
   },
   course: {

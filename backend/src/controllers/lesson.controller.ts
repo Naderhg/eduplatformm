@@ -49,8 +49,8 @@ export const getLesson = asyncHandler(async (req: AuthRequest, res: Response, ne
     return next(new ErrorResponse('Lesson not found', 404));
   }
 
-  // Check if user is the course teacher or admin
-  if (lesson.teacher._id.toString() !== req.user.id && req.user.role !== 'ADMIN') {
+  // Check if user is the course teacher, admin, or enrolled student
+  if (lesson.teacher._id.toString() !== req.user.id && req.user.role !== 'ADMIN' && req.user.role !== 'STUDENT') {
     return next(new ErrorResponse('Not authorized to view this lesson', 403));
   }
 

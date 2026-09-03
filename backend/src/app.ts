@@ -115,24 +115,11 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
-  });
-});
-
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Not Found',
-    error: `Cannot ${req.method} ${req.path}`
-  });
-});
+app.use(notFound);
+
+// Error handling middleware - use the proper errorHandler that respects status codes
+app.use(errorHandler);
 
 // Database connection is already initialized at the top
 
