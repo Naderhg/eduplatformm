@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { assignmentsApi } from '../../api/assignments.api';
+import { coursesApi, Course } from '../../api/courses.api';
+import { TeacherShellWrapper } from './TeacherShellWrapper';
 import { Loader } from '../../components/common/Loader';
-import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, FileText, HelpCircle, Award, Video, BookOpen } from 'lucide-react';
 import './CreateAssignment.css';
 
 type AssignmentType = 'mcq' | 'essay' | 'mixed';
@@ -25,153 +27,113 @@ interface EssayQuestion {
 
 export const CreateAssignment: React.FC = () => {
   const params = useParams<{ id?: string }>();
-  console.log('URL params:', params);
   const courseId = params.id;
-  console.log('Extracted courseId:', courseId);
   const navigate = useNavigate();
-  
+
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingCourse, setLoadingCourse] = useState(false);
+  const [course, setCourse] = useState<Course | null>(null);
   const [assignmentType, setAssignmentType] = useState<AssignmentType>('essay');
-  
-  // Basic assignment info
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [availableFrom, setAvailableFrom] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [maxScore, setMaxScore] = useState(100);
   const [certificateEnabled, setCertificateEnabled] = useState(false);
   const [certificatePassingScore, setCertificatePassingScore] = useState(50);
-  
-  // Questions
+
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([]);
   const [essayQuestions, setEssayQuestions] = useState<EssayQuestion[]>([]);
 
+  // Fetch course details if courseId is provided
+  useEffect(() => {
+    if (!courseId) return;
+    setLoadingCourse(true);
+    coursesApi.getById(courseId)
+      .then(c => setCourse(c))
+      .catch(() => toast.error('فشل تحميل بيانات الكورس'))
+      .finally(() => setLoadingCourse(false));
+  }, [courseId]);
+
   const addMCQQuestion = () => {
-    const newQuestion: MCQQuestion = {
+    setMcqQuestions([...mcqQuestions, {
       id: Date.now().toString(),
       question: '',
       options: ['', '', '', ''],
       correctAnswer: 0,
       points: 10
-    };
-    setMcqQuestions([...mcqQuestions, newQuestion]);
+    }]);
   };
 
   const updateMCQQuestion = (id: string, field: keyof MCQQuestion, value: any) => {
-    setMcqQuestions(questions =>
-      questions.map(q => q.id === id ? { ...q, [field]: value } : q)
-    );
+    setMcqQuestions(qs => qs.map(q => q.id === id ? { ...q, [field]: value } : q));
   };
 
   const deleteMCQQuestion = (id: string) => {
-    setMcqQuestions(questions => questions.filter(q => q.id !== id));
+    setMcqQuestions(qs => qs.filter(q => q.id !== id));
+  };
+
+  const addMCQOption = (qId: string) => {
+    setMcqQuestions(qs => qs.map(q => q.id === qId ? { ...q, options: [...q.options, ''] } : q));
+  };
+
+  const removeMCQOption = (qId: string, oIndex: number) => {
+    setMcqQuestions(qs => qs.map(q => {
+      if (q.id !== qId || q.options.length <= 2) return q;
+      const newOptions = q.options.filter((_, i) => i !== oIndex);
+      const newCorrect = q.correctAnswer >= newOptions.length ? 0 : q.correctAnswer > oIndex ? q.correctAnswer - 1 : q.correctAnswer;
+      return { ...q, options: newOptions, correctAnswer: newCorrect };
+    }));
   };
 
   const addEssayQuestion = () => {
-    const newQuestion: EssayQuestion = {
+    setEssayQuestions([...essayQuestions, {
       id: Date.now().toString(),
       question: '',
       maxWords: 500,
       points: 20
-    };
-    setEssayQuestions([...essayQuestions, newQuestion]);
+    }]);
   };
 
   const updateEssayQuestion = (id: string, field: keyof EssayQuestion, value: any) => {
-    setEssayQuestions(questions =>
-      questions.map(q => q.id === id ? { ...q, [field]: value } : q)
-    );
+    setEssayQuestions(qs => qs.map(q => q.id === id ? { ...q, [field]: value } : q));
   };
 
   const deleteEssayQuestion = (id: string) => {
-    setEssayQuestions(questions => questions.filter(q => q.id !== id));
+    setEssayQuestions(qs => qs.filter(q => q.id !== id));
   };
 
   const calculateTotalPoints = () => {
-    const mcqPoints = mcqQuestions.reduce((sum, q) => sum + q.points, 0);
-    const essayPoints = essayQuestions.reduce((sum, q) => sum + q.points, 0);
-    return mcqPoints + essayPoints;
+    return mcqQuestions.reduce((s, q) => s + q.points, 0) + essayQuestions.reduce((s, q) => s + q.points, 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('=== handleSubmit called! ===');
     e.preventDefault();
-    
-    if (!title.trim()) {
-      console.log('❌ Validation failed: No title');
-      toast.error('Please enter assignment title');
-      return;
-    }
 
-    if (!description.trim()) {
-      console.log('❌ Validation failed: No description');
-      toast.error('Please enter assignment description');
-      return;
-    }
-
-    if (!dueDate) {
-      console.log('❌ Validation failed: No dueDate');
-      toast.error('Please select due date');
-      return;
-    }
-
+    if (!title.trim()) return toast.error('من فضلك أدخل عنوان الواجب');
+    if (!description.trim()) return toast.error('من فضلك أدخل وصف الواجب');
+    if (!dueDate) return toast.error('من فضلك اختر تاريخ التسليم');
     if (availableFrom && new Date(availableFrom) >= new Date(dueDate)) {
-      console.log('❌ Validation failed: Available date after due date');
-      toast.error('Available date must be before due date');
-      return;
+      return toast.error('تاريخ الإتاحة يجب أن يكون قبل تاريخ التسليم');
     }
 
     const hasQuestions = assignmentType === 'mcq' ? mcqQuestions.length > 0 :
-                        assignmentType === 'essay' ? essayQuestions.length > 0 :
-                        mcqQuestions.length > 0 || essayQuestions.length > 0;
+      assignmentType === 'essay' ? essayQuestions.length > 0 :
+        mcqQuestions.length > 0 || essayQuestions.length > 0;
 
-    console.log('📊 Question validation:', {
-      assignmentType,
-      mcqQuestions: mcqQuestions.length,
-      essayQuestions: essayQuestions.length,
-      hasQuestions
-    });
+    if (!hasQuestions) return toast.error('من فضلك أضف سؤالاً واحداً على الأقل');
 
-    if (!hasQuestions) {
-      console.log('❌ Validation failed: No questions');
-      toast.error('Please add at least one question');
-      return;
+    for (const q of mcqQuestions) {
+      if (!q.question.trim()) return toast.error('من فضلك املأ كل أسئلة الاختيار');
+      if (q.options.some(o => !o.trim())) return toast.error('من فضلك املأ كل خيارات الاختيار');
+    }
+    for (const q of essayQuestions) {
+      if (!q.question.trim()) return toast.error('من فضلك املأ كل الأسئلة المقالية');
     }
 
-    // Validate MCQ questions
-    for (const question of mcqQuestions) {
-      if (!question.question.trim()) {
-        console.log('❌ Validation failed: Empty MCQ question');
-        toast.error('Please fill in all MCQ questions');
-        return;
-      }
-      if (question.options.some(opt => !opt.trim())) {
-        console.log('❌ Validation failed: Empty MCQ option');
-        toast.error('Please fill in all MCQ options');
-        return;
-      }
-    }
-
-    // Validate Essay questions
-    for (const question of essayQuestions) {
-      if (!question.question.trim()) {
-        console.log('❌ Validation failed: Empty essay question');
-        toast.error('Please fill in all essay questions');
-        return;
-      }
-    }
-
-    console.log('✅ All validation passed!');
-
-    console.log('=== Validation Passed ===');
-    
     setIsLoading(true);
-    
     try {
       const totalPoints = calculateTotalPoints();
-      
-      console.log('=== Calculating Total Points ===', totalPoints);
-      
       const assignmentData: any = {
         title,
         description,
@@ -180,362 +142,229 @@ export const CreateAssignment: React.FC = () => {
         maxScore: totalPoints,
         type: assignmentType,
         questions: {
-          mcq: mcqQuestions.map(({ id, ...q }) => q), // Remove id field
-          essay: essayQuestions.map(({ id, ...q }) => q) // Remove id field
+          mcq: mcqQuestions.map(({ id, ...q }) => q),
+          essay: essayQuestions.map(({ id, ...q }) => q)
         },
         autoCorrect: assignmentType === 'mcq' || assignmentType === 'mixed',
         certificateEnabled,
         certificatePassingScore
       };
 
-      // Only include courseId if it exists
-      if (courseId) {
-        assignmentData.courseId = courseId;
-      }
+      if (courseId) assignmentData.courseId = courseId;
 
-      console.log('=== Calling assignmentsApi.create ===');
-      console.log('Final assignment data being sent:', assignmentData);
-      console.log('Type of assignmentData:', typeof assignmentData);
-      console.log('Assignment data keys:', Object.keys(assignmentData));
-      
-      const response = await assignmentsApi.create(assignmentData);
-      console.log('API Response:', response);
-      
-      console.log('=== Assignment Created Successfully ===');
-      toast.success('Assignment created successfully!');
-      
-      // Navigate based on whether we have a course or not
-      if (courseId) {
-        navigate(`/teacher/courses/${courseId}/manage`);
-      } else {
-        navigate('/teacher/assignments');
-      }
-      
+      await assignmentsApi.create(assignmentData);
+      toast.success('تم إنشاء الواجب بنجاح');
+      navigate(courseId ? `/teacher/courses/${courseId}/manage` : '/teacher/assignments');
     } catch (error: any) {
-      console.error('=== Create Assignment Error ===', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error config:', error.config);
-      
-      toast.error(error.response?.data?.message || error.message || 'Failed to create assignment');
+      toast.error(error.response?.data?.message || error.message || 'فشل إنشاء الواجب');
     } finally {
-      console.log('=== Finally Block ===');
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <Loader fullScreen text="Creating assignment..." />;
+  if (isLoading || loadingCourse) {
+    return (
+      <TeacherShellWrapper>
+        <Loader fullScreen text={isLoading ? 'جاري إنشاء الواجب...' : 'جاري التحميل...'} />
+      </TeacherShellWrapper>
+    );
   }
 
   return (
-    <div className="create-assignment">
-      <div className="page-header">
-        <button 
-          className="btn btn-ghost mb-4"
-          onClick={() => courseId ? navigate(`/teacher/courses/${courseId}/manage`) : navigate('/teacher/assignments')}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to {courseId ? 'Course' : 'Assignments'}
-        </button>
-        <div>
-          <h1 className="page-title">Create Assignment</h1>
-          <p className="page-subtitle">Create a new assignment for your students</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="assignment-form">
-        {/* Basic Information */}
-        <div className="form-section card">
-          <h2 className="section-title">Basic Information</h2>
-          
-          <div className="form-group">
-            <label htmlFor="title">Assignment Title *</label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter assignment title"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">Description *</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the assignment requirements"
-              rows={4}
-              required
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="availableFrom">Available From (Optional)</label>
-              <input
-                type="datetime-local"
-                id="availableFrom"
-                value={availableFrom}
-                onChange={(e) => setAvailableFrom(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="dueDate">Due Date *</label>
-              <input
-                type="datetime-local"
-                id="dueDate"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="type">Assignment Type *</label>
-            <select
-              id="type"
-              value={assignmentType}
-              onChange={(e) => setAssignmentType(e.target.value as AssignmentType)}
-              required
-            >
-              <option value="essay">Essay / Written Answer</option>
-              <option value="mcq">Multiple Choice Questions (MCQ)</option>
-              <option value="mixed">Mixed (MCQ + Essay)</option>
-            </select>
-          </div>
-
-          <div className="form-info">
-            <strong>Total Points:</strong> {calculateTotalPoints()}
-            {assignmentType === 'mcq' && (
-              <span className="auto-correct-badge">Auto-correction enabled</span>
-            )}
-            {assignmentType === 'mixed' && (
-              <span className="auto-correct-badge">MCQ questions will be auto-corrected</span>
-            )}
+    <TeacherShellWrapper>
+      <div className="create-assignment" dir="rtl">
+        <div className="page-header">
+          <button
+            className="btn btn-ghost mb-4"
+            onClick={() => courseId ? navigate(`/teacher/courses/${courseId}/manage`) : navigate('/teacher/assignments')}
+          >
+            <ArrowLeft className="ml-1 size-4" /> رجوع لـ{courseId ? 'الكورس' : 'الواجبات'}
+          </button>
+          <div>
+            <h1 className="page-title">إنشاء واجب جديد</h1>
+            <p className="page-subtitle">{course ? `للكورس: ${course.title}` : 'أنشئ واجباً جديداً لطلابك'}</p>
           </div>
         </div>
 
-        {/* MCQ Questions */}
-        {(assignmentType === 'mcq' || assignmentType === 'mixed') && (
+        <form onSubmit={handleSubmit} className="assignment-form">
+          {/* Basic Info */}
           <div className="form-section card">
-            <div className="section-header">
-              <h2 className="section-title">MCQ Questions</h2>
-              <button type="button" className="btn btn-primary" onClick={addMCQQuestion}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add MCQ Question
-              </button>
+            <h2 className="section-title">المعلومات الأساسية</h2>
+
+            <div className="form-group">
+              <label>عنوان الواجب *</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="أدخل عنوان الواجب" required />
             </div>
 
-            {mcqQuestions.length === 0 ? (
-              <p className="text-gray-500">No MCQ questions added yet</p>
-            ) : (
-              mcqQuestions.map((question, qIndex) => (
-                <div key={question.id} className="question-card">
-                  <div className="question-header">
-                    <h3>Question {qIndex + 1}</h3>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => deleteMCQQuestion(question.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+            <div className="form-group">
+              <label>الوصف *</label>
+              <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="اشرح متطلبات الواجب" rows={4} required />
+            </div>
 
-                  <div className="form-group">
-                    <label>Question</label>
-                    <textarea
-                      value={question.question}
-                      onChange={(e) => updateMCQQuestion(question.id, 'question', e.target.value)}
-                      placeholder="Enter your question"
-                      rows={3}
-                      required
-                    />
-                  </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>متاح من (اختياري)</label>
+                <input type="datetime-local" value={availableFrom} onChange={e => setAvailableFrom(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>تاريخ التسليم *</label>
+                <input type="datetime-local" value={dueDate} onChange={e => setDueDate(e.target.value)} required />
+              </div>
+            </div>
 
-                  <div className="form-group">
-                    <label>Options</label>
-                    {question.options.map((option, oIndex) => (
-                      <div key={oIndex} className="option-input">
-                        <input
-                          type="radio"
-                          name={`correct-${question.id}`}
-                          checked={question.correctAnswer === oIndex}
-                          onChange={() => updateMCQQuestion(question.id, 'correctAnswer', oIndex)}
-                        />
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(e) => {
-                            const newOptions = [...question.options];
-                            newOptions[oIndex] = e.target.value;
-                            updateMCQQuestion(question.id, 'options', newOptions);
-                          }}
-                          placeholder={`Option ${oIndex + 1}`}
-                          required
-                        />
-                        <span className="correct-label">
-                          {question.correctAnswer === oIndex && '✓ Correct'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+            <div className="form-group">
+              <label>نوع الواجب *</label>
+              <select value={assignmentType} onChange={e => setAssignmentType(e.target.value as AssignmentType)} required>
+                <option value="essay">سؤال مقالي / إجابة كتابية</option>
+                <option value="mcq">اختيار من متعدد (MCQ)</option>
+                <option value="mixed">مختلط (MCQ + مقالي)</option>
+              </select>
+            </div>
 
-                  <div className="form-group">
-                    <label>Points</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={question.points}
-                      onChange={(e) => updateMCQQuestion(question.id, 'points', parseInt(e.target.value))}
-                      required
-                    />
-                  </div>
-                </div>
-              ))
-            )}
+            <div className="form-info">
+              <strong>إجمالي الدرجات:</strong> {calculateTotalPoints()}
+              {(assignmentType === 'mcq' || assignmentType === 'mixed') && (
+                <span className="auto-correct-badge">تصحيح تلقائي للـ MCQ</span>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* Essay Questions */}
-        {(assignmentType === 'essay' || assignmentType === 'mixed') && (
-          <div className="form-section card">
-            <div className="section-header">
-              <h2 className="section-title">Essay Questions</h2>
-              <button type="button" className="btn btn-primary" onClick={addEssayQuestion}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Essay Question
-              </button>
-            </div>
+          {/* MCQ Questions */}
+          {(assignmentType === 'mcq' || assignmentType === 'mixed') && (
+            <div className="form-section card">
+              <div className="section-header">
+                <h2 className="section-title">أسئلة الاختيار من متعدد</h2>
+                <button type="button" className="btn btn-primary" onClick={addMCQQuestion}>
+                  <Plus className="ml-1 size-4" /> إضافة سؤال
+                </button>
+              </div>
 
-            {essayQuestions.length === 0 ? (
-              <p className="text-gray-500">No essay questions added yet</p>
-            ) : (
-              essayQuestions.map((question, qIndex) => (
-                <div key={question.id} className="question-card">
-                  <div className="question-header">
-                    <h3>Question {qIndex + 1}</h3>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => deleteEssayQuestion(question.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Question</label>
-                    <textarea
-                      value={question.question}
-                      onChange={(e) => updateEssayQuestion(question.id, 'question', e.target.value)}
-                      placeholder="Enter your essay question"
-                      rows={3}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Max Words (optional)</label>
-                      <input
-                        type="number"
-                        min="50"
-                        value={question.maxWords || ''}
-                        onChange={(e) => updateEssayQuestion(question.id, 'maxWords', parseInt(e.target.value) || undefined)}
-                        placeholder="500"
-                      />
+              {mcqQuestions.length === 0 ? (
+                <div className="empty-state">
+                  <HelpCircle className="size-10 text-muted-foreground" />
+                  <p>لم تتم إضافة أسئلة اختيار من متعدد بعد</p>
+                </div>
+              ) : (
+                mcqQuestions.map((q, qIdx) => (
+                  <div key={q.id} className="question-card">
+                    <div className="question-header">
+                      <h3>سؤال {qIdx + 1}</h3>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => deleteMCQQuestion(q.id)}>
+                        <Trash2 className="size-4 text-destructive" />
+                      </button>
                     </div>
 
                     <div className="form-group">
-                      <label>Points</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={question.points}
-                        onChange={(e) => updateEssayQuestion(question.id, 'points', parseInt(e.target.value))}
-                        required
-                      />
+                      <label>نص السؤال</label>
+                      <textarea value={q.question} onChange={e => updateMCQQuestion(q.id, 'question', e.target.value)} placeholder="اكتب السؤال" rows={2} required />
+                    </div>
+
+                    <div className="form-group">
+                      <label>الخيارات (اختر الإجابة الصحيحة)</label>
+                      {q.options.map((opt, oIdx) => (
+                        <div key={oIdx} className="option-input">
+                          <input type="radio" name={`correct-${q.id}`} checked={q.correctAnswer === oIdx} onChange={() => updateMCQQuestion(q.id, 'correctAnswer', oIdx)} />
+                          <input type="text" value={opt} onChange={e => {
+                            const newOpts = [...q.options]; newOpts[oIdx] = e.target.value;
+                            updateMCQQuestion(q.id, 'options', newOpts);
+                          }} placeholder={`الخيار ${oIdx + 1}`} required />
+                          {q.correctAnswer === oIdx && <span className="correct-label">✓ صحيح</span>}
+                          {q.options.length > 2 && (
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeMCQOption(q.id, oIdx)}>
+                              <Trash2 className="size-3.5 text-destructive" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={() => addMCQOption(q.id)}>
+                        <Plus className="ml-1 size-3" /> إضافة خيار
+                      </button>
+                    </div>
+
+                    <div className="form-group">
+                      <label>الدرجة</label>
+                      <input type="number" min="1" value={q.points} onChange={e => updateMCQQuestion(q.id, 'points', parseInt(e.target.value) || 1)} required />
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Certificate Settings */}
-        <div className="certificate-section card">
-          <h2 className="section-title">🎓 Certificate Settings</h2>
-          <p className="section-description" style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-            Enable certificates for students who pass this assignment.
-          </p>
-          <div className="form-group">
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={certificateEnabled}
-                onChange={(e) => setCertificateEnabled(e.target.checked)}
-                className="toggle-input"
-              />
-              <span className="toggle-switch"></span>
-              <span style={{ marginLeft: '8px' }}>Enable Certificate</span>
-            </label>
-          </div>
-          {certificateEnabled && (
-            <div className="form-group" style={{ marginTop: '1rem' }}>
-              <label htmlFor="certificatePassingScore">Minimum Passing Score (%)</label>
-              <input
-                type="number"
-                id="certificatePassingScore"
-                min="0"
-                max="100"
-                value={certificatePassingScore}
-                onChange={(e) => setCertificatePassingScore(Number(e.target.value))}
-                className="form-input"
-                style={{ maxWidth: '200px' }}
-                required
-              />
-              <span className="form-hint" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.25rem' }}>
-                Students scoring at or above this percentage will receive a certificate.
-              </span>
+                ))
+              )}
             </div>
           )}
-        </div>
 
-        {/* Submit Button */}
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
-            <Save className="w-4 h-4 mr-2" />
-            Create Assignment
-          </button>
-          
-          {/* Debug Test Button */}
-          <button 
-            type="button" 
-            className="btn btn-secondary ml-2"
-            onClick={() => {
-              console.log('=== Test button clicked ===');
-              console.log('Current form data:', {
-                title,
-                description,
-                dueDate,
-                assignmentType,
-                mcqQuestions: mcqQuestions.length,
-                essayQuestions: essayQuestions.length
-              });
-            }}
-          >
-            Test Form Data
-          </button>
-        </div>
-      </form>
-    </div>
+          {/* Essay Questions */}
+          {(assignmentType === 'essay' || assignmentType === 'mixed') && (
+            <div className="form-section card">
+              <div className="section-header">
+                <h2 className="section-title">الأسئلة المقالية</h2>
+                <button type="button" className="btn btn-primary" onClick={addEssayQuestion}>
+                  <Plus className="ml-1 size-4" /> إضافة سؤال
+                </button>
+              </div>
+
+              {essayQuestions.length === 0 ? (
+                <div className="empty-state">
+                  <FileText className="size-10 text-muted-foreground" />
+                  <p>لم تتم إضافة أسئلة مقالية بعد</p>
+                </div>
+              ) : (
+                essayQuestions.map((q, qIdx) => (
+                  <div key={q.id} className="question-card">
+                    <div className="question-header">
+                      <h3>سؤال {qIdx + 1}</h3>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => deleteEssayQuestion(q.id)}>
+                        <Trash2 className="size-4 text-destructive" />
+                      </button>
+                    </div>
+
+                    <div className="form-group">
+                      <label>نص السؤال</label>
+                      <textarea value={q.question} onChange={e => updateEssayQuestion(q.id, 'question', e.target.value)} placeholder="اكتب السؤال المقالي" rows={3} required />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>الحد الأقصى للكلمات (اختياري)</label>
+                        <input type="number" min="50" value={q.maxWords || ''} onChange={e => updateEssayQuestion(q.id, 'maxWords', parseInt(e.target.value) || undefined)} placeholder="500" />
+                      </div>
+                      <div className="form-group">
+                        <label>الدرجة</label>
+                        <input type="number" min="1" value={q.points} onChange={e => updateEssayQuestion(q.id, 'points', parseInt(e.target.value) || 1)} required />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Certificate */}
+          <div className="certificate-section card">
+            <h2 className="section-title">إعدادات الشهادة</h2>
+            <p className="section-description">فعّل الشهادات للطلاب الذين يجتازون هذا الواجب</p>
+            <div className="form-group">
+              <label className="toggle-label">
+                <input type="checkbox" checked={certificateEnabled} onChange={e => setCertificateEnabled(e.target.checked)} className="toggle-input" />
+                <span className="toggle-switch"></span>
+                <span>تفعيل الشهادة</span>
+              </label>
+            </div>
+            {certificateEnabled && (
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>الحد الأدنى للنجاح (%)</label>
+                <input type="number" min="0" max="100" value={certificatePassingScore} onChange={e => setCertificatePassingScore(Number(e.target.value))} style={{ maxWidth: '200px' }} required />
+                <span className="form-hint">الطلاب الحاصلون على هذه النسبة أو أكثر سيحصلون على شهادة</span>
+              </div>
+            )}
+          </div>
+
+          {/* Submit */}
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={isLoading}>
+              <Save className="ml-1 size-4" /> إنشاء الواجب
+            </button>
+          </div>
+        </form>
+      </div>
+    </TeacherShellWrapper>
   );
 };

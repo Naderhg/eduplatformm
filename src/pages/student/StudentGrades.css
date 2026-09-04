@@ -225,3 +225,43 @@
     padding: var(--space-3) var(--space-4);
   }
 }
+
+/* RTL adjustments */
+.student-grades[dir="rtl"] .grades-table th,
+.student-grades[dir="rtl"] .grades-table td {
+  text-align: right;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.empty-state .size-16 {
+  width: 4rem;
+  height: 4rem;
+}
+
+/* Page title/subtitle */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+/* Utility */
+.text-muted-foreground { color: var(--color-text-muted, #6b7280); }
+.text-lg { font-size: 1.125rem; }
+.font-bold { font-weight: 700; }
+.size-16 { width: 4rem; height: 4rem; }

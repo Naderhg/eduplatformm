@@ -1,248 +1,195 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { assignmentsApi } from '../../api/assignments.api';
 import { Loader } from '../../components/common/Loader';
 import { toast } from 'react-toastify';
-import { RefreshCw } from 'lucide-react';
-import './StudentAssignments.css';
 import { StudentShellWrapper } from './StudentShellWrapper';
+import { RefreshCw, FileText, Clock, CheckCircle, AlertCircle, Award, Play, Calendar } from 'lucide-react';
+import './StudentAssignments.css';
+
+type FilterType = 'all' | 'pending' | 'submitted' | 'graded';
 
 export const StudentAssignments: React.FC = () => {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'submitted' | 'graded'>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
-  const fetchAssignments = async (showRefreshLoading = false) => {
-    if (!user?.id) {
-      console.error('No user ID found');
-      return;
-    }
-    
+  const fetchAssignments = useCallback(async (showRefreshLoading = false) => {
+    if (!user?.id) return;
     try {
-      if (showRefreshLoading) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      console.log('Fetching student assignments...');
-        const response = await assignmentsApi.getStudentAssignments();
-        console.log('Student assignments received:', response);
-        
-        // Debug submission data for each assignment
-        response.forEach((assignment: any) => {
-          if (assignment.submissions && assignment.submissions.length > 0) {
-            console.log(`Assignment "${assignment.title}" submission:`, assignment.submissions[0]);
-          }
-        });
-        
-        setAssignments(response);
+      if (showRefreshLoading) setRefreshing(true);
+      else setLoading(true);
+      const response = await assignmentsApi.getStudentAssignments();
+      setAssignments(response || []);
     } catch (error: any) {
       console.error('Failed to fetch assignments:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to load assignments';
-      toast.error(errorMessage);
+      toast.error('فشل تحميل الواجبات');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const handleRefresh = () => {
-    fetchAssignments(true);
-  };
+  }, [user?.id]);
 
   // Auto-refresh for assignments awaiting grade
   useEffect(() => {
     const awaitingGradeCount = assignments.filter(a => {
       const hasSubmission = a.submissions && a.submissions.length > 0;
-      const isGraded = hasSubmission && a.submissions.some(s => s.score);
+      const isGraded = hasSubmission && a.submissions.some((s: any) => s.score !== undefined && s.score !== null);
       return hasSubmission && !isGraded;
     }).length;
 
-    // Only set up interval if there are assignments awaiting grade
     if (awaitingGradeCount > 0) {
-      const interval = setInterval(() => {
-        fetchAssignments(false); // Refresh without showing loading
-      }, 30000); // Check every 30 seconds
-
+      const interval = setInterval(() => fetchAssignments(false), 30000);
       return () => clearInterval(interval);
     }
-  }, [assignments, user?.id]);
+  }, [assignments, user?.id, fetchAssignments]);
 
-  useEffect(() => {
-    fetchAssignments();
-  }, [user?.id]);
+  useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
 
-  const pendingCount = assignments.filter(a => {
-  // Check if student has submitted this assignment
-  const hasSubmission = a.submissions && a.submissions.length > 0;
-  return !hasSubmission;
-}).length;
+  const pendingCount = assignments.filter(a => !(a.submissions && a.submissions.length > 0)).length;
   const submittedCount = assignments.filter(a => a.submissions && a.submissions.length > 0).length;
-  const gradedCount = assignments.filter(a => a.submissions && a.submissions.some(s => s.score)).length;
+  const gradedCount = assignments.filter(a => a.submissions && a.submissions.some((s: any) => s.score !== undefined && s.score !== null)).length;
 
   const getFilteredAssignments = () => {
     switch (activeFilter) {
-      case 'pending':
-        return assignments.filter(a => {
-          const hasSubmission = a.submissions && a.submissions.length > 0;
-          return !hasSubmission;
-        });
-      case 'submitted':
-        return assignments.filter(a => a.submissions && a.submissions.length > 0);
-      case 'graded':
-        return assignments.filter(a => a.submissions && a.submissions.some(s => s.score));
-      default:
-        return assignments;
+      case 'pending': return assignments.filter(a => !(a.submissions && a.submissions.length > 0));
+      case 'submitted': return assignments.filter(a => a.submissions && a.submissions.length > 0);
+      case 'graded': return assignments.filter(a => a.submissions && a.submissions.some((s: any) => s.score !== undefined && s.score !== null));
+      default: return assignments;
     }
   };
 
   if (loading) {
-    return <Loader fullScreen text="Loading assignments..." />;
+    return (
+      <StudentShellWrapper>
+        <Loader fullScreen text="جاري التحميل..." />
+      </StudentShellWrapper>
+    );
   }
 
   const filteredAssignments = getFilteredAssignments();
 
+  const tabs: { key: FilterType; label: string; count: number }[] = [
+    { key: 'all', label: 'الكل', count: assignments.length },
+    { key: 'pending', label: 'بانتظار التسليم', count: pendingCount },
+    { key: 'submitted', label: 'تم التسليم', count: submittedCount },
+    { key: 'graded', label: 'تم التصحيح', count: gradedCount },
+  ];
+
   return (
     <StudentShellWrapper>
-    <div className="student-assignments">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Assignments</h1>
-          <p className="page-subtitle">View and submit your assignments</p>
+      <div className="student-assignments" dir="rtl">
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">الواجبات</h1>
+            <p className="page-subtitle">استعرض واجباتك وسلّم إجاباتك</p>
+          </div>
+          <button onClick={() => fetchAssignments(true)} disabled={refreshing} className="btn btn-ghost refresh-btn" title="تحديث">
+            <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
+            {refreshing ? 'جاري التحديث...' : 'تحديث'}
+          </button>
         </div>
-        <button 
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="btn btn-ghost refresh-btn"
-          title="Refresh assignments"
-        >
-          <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
 
-      {/* Filter Tabs */}
-      <div className="filter-tabs">
-        <button 
-          className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('all')}
-        >
-          All ({assignments.length})
-        </button>
-        <button 
-          className={`filter-tab ${activeFilter === 'pending' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('pending')}
-        >
-          Pending ({pendingCount})
-        </button>
-        <button 
-          className={`filter-tab ${activeFilter === 'submitted' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('submitted')}
-        >
-          Submitted ({submittedCount})
-        </button>
-        <button 
-          className={`filter-tab ${activeFilter === 'graded' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('graded')}
-        >
-          Graded ({gradedCount})
-        </button>
-      </div>
+        {/* Filter Tabs */}
+        <div className="filter-tabs">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              className={`filter-tab ${activeFilter === tab.key ? 'active' : ''}`}
+              onClick={() => setActiveFilter(tab.key)}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
 
-      {/* Assignments List */}
-      <div className="assignments-list">
-        {filteredAssignments.map((assignment) => {
-          const dueDate = new Date(assignment.dueDate);
-          const isOverdue = dueDate < new Date();
-          const daysLeft = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-          
-          // Check submission status
-          const hasSubmission = assignment.submissions && assignment.submissions.length > 0;
-          const isSubmitted = hasSubmission;
-          const isGraded = hasSubmission && assignment.submissions.some(s => s.score);
-          const submission = hasSubmission ? assignment.submissions[0] : null;
-          
-          // Check if recently graded (within last 5 minutes)
-          const recentlyGraded = isGraded && submission?.gradedAt && 
-            (Date.now() - new Date(submission.gradedAt).getTime()) < 5 * 60 * 1000;
+        {/* Assignments List */}
+        {filteredAssignments.length > 0 ? (
+          <div className="assignments-list">
+            {filteredAssignments.map((assignment) => {
+              const dueDate = new Date(assignment.dueDate);
+              const isOverdue = dueDate < new Date();
+              const daysLeft = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              const hasSubmission = assignment.submissions && assignment.submissions.length > 0;
+              const isGraded = hasSubmission && assignment.submissions.some((s: any) => s.score !== undefined && s.score !== null);
+              const submission = hasSubmission ? assignment.submissions[0] : null;
+              const recentlyGraded = isGraded && submission?.gradedAt &&
+                (Date.now() - new Date(submission.gradedAt).getTime()) < 5 * 60 * 1000;
+              const status = isGraded ? 'graded' : hasSubmission ? 'submitted' : isOverdue ? 'overdue' : 'pending';
 
-          return (
-            <div key={assignment._id} className="assignment-card card">
-              <div className="assignment-status-indicator" data-status={isGraded ? 'graded' : isSubmitted ? 'submitted' : 'pending'}></div>
-              <div className="assignment-content">
-                <div className="assignment-header">
-                  <div className="title-section">
-                    <h3 className="assignment-title">{assignment.title}</h3>
-                    {recentlyGraded && (
-                      <span className="newly-graded-badge">🎉 Newly Graded!</span>
+              return (
+                <div key={assignment._id} className="assignment-card card">
+                  <div className="assignment-status-indicator" data-status={status}></div>
+                  <div className="assignment-content">
+                    <div className="assignment-header">
+                      <div className="title-section">
+                        <h3 className="assignment-title">{assignment.title}</h3>
+                        {recentlyGraded && <span className="newly-graded-badge">🎉 تم التصحيح حديثاً!</span>}
+                      </div>
+                      <span className={`status-badge status-${status}`}>
+                        {isGraded ? 'تم التصحيح' : hasSubmission ? 'تم التسليم' : isOverdue ? 'متأخر' : 'بانتظار التسليم'}
+                      </span>
+                    </div>
+                    <p className="assignment-course">{assignment.course?.title || 'كورس'}</p>
+                    <div className="assignment-meta">
+                      <span className="meta-item">
+                        <Calendar className="size-4" />
+                        التسليم: {dueDate.toLocaleDateString('ar')}
+                      </span>
+                      {!hasSubmission && !isGraded && !isOverdue && (
+                        <span className={`meta-item ${daysLeft <= 3 ? 'urgent' : ''}`}>
+                          <Clock className="size-4" />
+                          {daysLeft > 0 ? `${daysLeft} يوم متبقي` : 'متأخر'}
+                        </span>
+                      )}
+                      {isGraded && submission && (
+                        <span className="meta-item score">
+                          <Award className="size-4" />
+                          الدرجة: {submission.score || 0}/{assignment.maxScore}
+                        </span>
+                      )}
+                      {hasSubmission && !isGraded && (
+                        <span className="meta-item">
+                          <CheckCircle className="size-4" />
+                          بانتظار التصحيح
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="assignment-actions">
+                    {!hasSubmission && !isGraded && (
+                      <Link to={`/student/assignments/${assignment._id}`} className="btn btn-primary">
+                        <Play className="ml-1 size-4" /> ابدأ
+                      </Link>
+                    )}
+                    {hasSubmission && !isGraded && (
+                      <button className="btn btn-secondary" disabled>
+                        <Clock className="ml-1 size-4" /> بانتظار التصحيح
+                      </button>
+                    )}
+                    {isGraded && (
+                      <Link to={`/student/assignments/${assignment._id}/results`} className="btn btn-secondary">
+                        <FileText className="ml-1 size-4" /> عرض النتيجة
+                      </Link>
                     )}
                   </div>
-                  <span className={`status-badge status-${isGraded ? 'graded' : isSubmitted ? 'submitted' : 'pending'}`}>
-                    {isGraded ? 'Graded' : isSubmitted ? 'Submitted' : (isOverdue ? 'Overdue' : 'Pending')}
-                  </span>
                 </div>
-                <p className="assignment-course">{assignment.course?.title}</p>
-                <div className="assignment-meta">
-                  <span className="meta-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    Due: {dueDate.toLocaleDateString()}
-                  </span>
-                  {!isSubmitted && !isGraded && !isOverdue && (
-                    <span className={`meta-item ${daysLeft <= 3 ? 'urgent' : ''}`}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      {daysLeft} days left
-                    </span>
-                  )}
-                  {isGraded && (
-                    <span className="meta-item score">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                      </svg>
-                      Score: {submission?.score || 0}/{assignment.maxScore}
-                      {/* Debug info */}
-                      {console.log(`Rendering score for ${assignment.title}:`, {
-                        submission,
-                        score: submission?.score,
-                        maxScore: assignment.maxScore,
-                        isGraded
-                      })}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="assignment-actions">
-                {!isSubmitted && !isGraded && (
-                  <Link to={`/student/assignments/${assignment._id}`} className="btn btn-primary">
-                    Start
-                  </Link>
-                )}
-                {isSubmitted && !isGraded && (
-                  <button className="btn btn-secondary" disabled>
-                    Awaiting Grade
-                  </button>
-                )}
-                {isGraded && (
-                  <Link to={`/student/assignments/${assignment._id}/results`} className="btn btn-secondary">
-                    View Feedback
-                  </Link>
-                )}
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <FileText className="size-16 text-muted-foreground" />
+            <h3 className="text-lg font-bold">لا توجد واجبات</h3>
+            <p className="text-sm text-muted-foreground">
+              {activeFilter === 'all' ? 'لا توجد واجبات مخصصة لك حالياً' : 'لا توجد واجبات في هذا التصنيف'}
+            </p>
+          </div>
+        )}
       </div>
-    </div>
     </StudentShellWrapper>
   );
 };
