@@ -48,6 +48,9 @@ const validateLessonWithId = [
 // All routes are protected
 router.use(protect);
 
+// Teacher: get all students' progress for a course (MUST be before /:lessonId routes)
+router.get('/course/:courseId/students-progress', authorize('TEACHER', 'ADMIN'), getCourseStudentsProgress);
+
 // Lesson routes - students can view lessons of enrolled courses
 router.get('/course/:courseId', authorize('TEACHER', 'ADMIN', 'STUDENT'), getLessons);
 router.get('/course/:courseId/:lessonId', authorize('TEACHER', 'ADMIN', 'STUDENT'), validateLessonWithId, getLesson);
@@ -71,8 +74,5 @@ router.post(
   submitLessonAnswers
 );
 router.get('/:lessonId/progress', getLessonProgress);
-
-// Teacher: get all students' progress for a course
-router.get('/course/:courseId/students-progress', authorize('TEACHER', 'ADMIN'), getCourseStudentsProgress);
 
 export default router;

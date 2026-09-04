@@ -68,7 +68,47 @@ export const CourseDetails: React.FC = () => {
       try {
         setLessonsLoading(true);
         const res = await lessonsApi.getAll(id);
-        setLessons(res.data || []);
+        const fetchedLessons = res.data || [];
+        setLessons(fetchedLessons);
+
+        // Fetch saved progress for each lesson that has questions
+        if (user?.role === 'STUDENT') {
+          const progressPromises = fetchedLessons
+            .filter(l => l.questions && l.questions.length > 0)
+            .map(async (lesson) => {
+              try {
+                const progRes = await lessonsApi.getProgress(lesson._id);
+                if (progRes.data && progRes.data.submittedAt) {
+                  // Reconstruct results from saved progress
+                  return {
+                    lessonId: lesson._id,
+                    result: {
+                      score: progRes.data.score,
+                      maxScore: progRes.data.maxScore,
+                      answers: progRes.data.answers || [],
+                    },
+                    savedAnswers: (progRes.data.answers || []).reduce((acc: Record<number, string>, a: any) => {
+                      acc[a.questionIndex] = a.answer;
+                      return acc;
+                    }, {} as Record<number, string>),
+                  };
+                }
+              } catch (e) { /* ignore */ }
+              return null;
+            });
+
+          const progressResults = await Promise.all(progressPromises);
+          const restoredAnswers: Record<string, Record<number, string>> = {};
+          const restoredResults: Record<string, { score: number; maxScore: number; answers: any[] } | null> = {};
+          progressResults.forEach((pr) => {
+            if (pr) {
+              restoredAnswers[pr.lessonId] = pr.savedAnswers;
+              restoredResults[pr.lessonId] = pr.result;
+            }
+          });
+          setAnswers(restoredAnswers);
+          setResults(restoredResults);
+        }
       } catch (e) {
         console.error('Failed to fetch lessons:', e);
       } finally {
@@ -76,7 +116,7 @@ export const CourseDetails: React.FC = () => {
       }
     };
     fetchLessons();
-  }, [id]);
+  }, [id, user?.id]);
 
   const handleFileDownload = (file: any) => {
     const link = document.createElement('a');
