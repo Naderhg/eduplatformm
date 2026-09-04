@@ -12,6 +12,7 @@ export const teacherNav = [
   { to: '/teacher/lessons', label: 'الدروس' },
   { to: '/teacher/assignments', label: 'الواجبات' },
   { to: '/teacher/students', label: 'الطلاب' },
+  { to: '/teacher/chat', label: 'المحادثات' },
 ] as const;
 
 export const teacherComingSoon = [
@@ -21,7 +22,6 @@ export const teacherComingSoon = [
   { label: 'تصحيح على PDF' },
   { label: 'Gradescope' },
   { label: 'بث مباشر / Zoom' },
-  { label: 'المحادثات' },
   { label: 'إحصائيات أولياء الأمور' },
 ] as const;
 
@@ -31,13 +31,13 @@ export const studentNav = [
   { to: '/student/lessons', label: 'الدروس' },
   { to: '/student/assignments', label: 'الواجبات' },
   { to: '/student/grades', label: 'الدرجات' },
+  { to: '/student/chat', label: 'المحادثات' },
 ] as const;
 
 export const studentComingSoon = [
   { label: 'الجدول الدراسي' },
   { label: 'الحصص المباشرة' },
   { label: 'الشهادات' },
-  { label: 'المحادثات' },
   { label: 'تقارير أولياء الأمور' },
 ] as const;
 

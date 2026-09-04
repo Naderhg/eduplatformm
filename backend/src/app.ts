@@ -5,8 +5,10 @@ import cors from 'cors';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
+import http from 'http';
 import { connectDB } from './config/db';
 import { specs } from './config/swagger';
+import { setupSocket } from './config/socket';
 import authRoutes from './routes/auth.routes';
 import courseRoutes from './routes/course.routes';
 import lessonRoutes from './routes/lesson.routes';
@@ -16,6 +18,7 @@ import studentRoutes from './routes/student.routes';
 import fileRoutes from './routes/file.routes';
 import commentRoutes from './routes/comment.routes';
 import certificateRoutes from './routes/certificate.routes';
+import chatRoutes from './routes/chat.routes';
 import { errorHandler, notFound } from './middleware/error';
 import './models/user.model'; // Import the model to ensure it's registered
 import './models/session.model'; // Import the model to ensure it's registered
@@ -26,6 +29,7 @@ import './models/lessonProgress.model'; // Import the model to ensure it's regis
 import './models/assignment.model'; // Import the model to ensure it's registered
 import './models/submission.model'; // Import the model to ensure it's registered
 import './models/comment.model'; // Import the model to ensure it's registered
+import './models/conversation.model'; // Import the model to ensure it's registered
 
 dotenv.config();
 
@@ -97,6 +101,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Debug endpoint to test CORS
 app.get('/api/debug', (req, res) => {
@@ -126,7 +131,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Setup Socket.io
+setupSocket(server);
+
+server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 

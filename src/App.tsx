@@ -21,6 +21,7 @@ import { TeacherGrading } from './pages/teacher/TeacherGrading';
 import { TeacherGradescope } from './pages/teacher/TeacherGradescope';
 import { TeacherLive } from './pages/teacher/TeacherLive';
 import { TeacherChat } from './pages/teacher/TeacherChat';
+import { StudentChat } from './pages/student/StudentChat';
 import { TeacherParents } from './pages/teacher/TeacherParents';
 import { TeacherCourses } from './pages/teacher/TeacherCourses';
 import { CreateCourse } from './pages/teacher/CreateCourse';
@@ -114,6 +115,14 @@ const App = () => (
           element={
             <ProtectedRoute allowedRoles={['TEACHER']}>
               <TeacherStudents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/chat"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherChat />
             </ProtectedRoute>
           }
         />
@@ -280,6 +289,14 @@ const App = () => (
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <StudentGrades />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/chat"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentChat />
             </ProtectedRoute>
           }
         />

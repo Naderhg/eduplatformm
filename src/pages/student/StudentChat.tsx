@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TeacherShellWrapper } from './TeacherShellWrapper';
+import { StudentShellWrapper } from './StudentShellWrapper';
 import { chatApi, Conversation, ChatContact, ChatMessage } from '../../api/chat.api';
 import { useSocket, SocketMessage } from '../../hooks/useSocket';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,7 +7,7 @@ import { Loader } from '../../components/common/Loader';
 import { toast } from 'react-toastify';
 import { Send, MessageCircle, Search, ArrowLeft, CheckCheck } from 'lucide-react';
 
-export const TeacherChat: React.FC = () => {
+export const StudentChat: React.FC = () => {
   const { user } = useAuth();
   const { connected, sendMessage, markRead, onNewMessage, onMessageSent, onMessagesRead } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -21,7 +21,6 @@ export const TeacherChat: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch conversations
   const fetchConversations = useCallback(async () => {
     try {
       const res = await chatApi.getConversations();
@@ -30,7 +29,6 @@ export const TeacherChat: React.FC = () => {
     finally { setLoading(false); }
   }, []);
 
-  // Fetch contacts (students enrolled in teacher's courses)
   const fetchContacts = useCallback(async () => {
     try {
       setContactsLoading(true);
@@ -42,29 +40,24 @@ export const TeacherChat: React.FC = () => {
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
-  // Open a conversation
   const openConversation = useCallback(async (conv: Conversation) => {
     setActiveConversation(conv);
     setActiveMessages(conv.messages || []);
     setShowContacts(false);
-    // Mark as read
     try {
       await chatApi.markAsRead(conv._id);
       markRead(conv._id);
-      // Update local unread count
-      setConversations(prev => prev.map(c => c._id === conv._id ? { ...c, unreadCountTeacher: 0 } : c));
+      setConversations(prev => prev.map(c => c._id === conv._id ? { ...c, unreadCountStudent: 0 } : c));
     } catch (e) { /* ignore */ }
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   }, [markRead]);
 
-  // Start new conversation with a contact
   const startConversation = useCallback(async (contact: ChatContact) => {
     try {
       const res = await chatApi.createConversation(contact._id);
       setActiveConversation(res.data);
       setActiveMessages(res.data.messages || []);
       setShowContacts(false);
-      // Add to conversations list if new
       setConversations(prev => {
         if (prev.some(c => c._id === res.data._id)) return prev;
         return [res.data, ...prev];
@@ -75,11 +68,10 @@ export const TeacherChat: React.FC = () => {
     }
   }, []);
 
-  // Handle sending a message
   const handleSend = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
     if (!text.trim() || !activeConversation) return;
-    const receiverId = activeConversation.student._id;
+    const receiverId = activeConversation.teacher._id;
     const tempId = `temp-${Date.now()}`;
     const msg: ChatMessage = {
       _id: tempId,
@@ -94,7 +86,6 @@ export const TeacherChat: React.FC = () => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   }, [text, activeConversation, user?.id, sendMessage]);
 
-  // Socket: new message received
   useEffect(() => {
     return onNewMessage((msg: SocketMessage) => {
       if (activeConversation && msg.conversationId === activeConversation._id) {
@@ -102,21 +93,18 @@ export const TeacherChat: React.FC = () => {
           if (prev.some(m => m._id === msg._id)) return prev;
           return [...prev, { _id: msg._id, sender: msg.sender, text: msg.text, read: msg.read, createdAt: msg.createdAt }];
         });
-        // Mark as read since we're viewing it
         markRead(activeConversation._id);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       }
-      // Update conversations list
       setConversations(prev => prev.map(c => {
         if (c._id === msg.conversationId) {
-          return { ...c, lastMessage: msg.text, lastMessageAt: msg.createdAt, unreadCountTeacher: activeConversation?._id === msg.conversationId ? 0 : (c.unreadCountTeacher || 0) + 1 };
+          return { ...c, lastMessage: msg.text, lastMessageAt: msg.createdAt, unreadCountStudent: activeConversation?._id === msg.conversationId ? 0 : (c.unreadCountStudent || 0) + 1 };
         }
         return c;
       }));
     });
   }, [onNewMessage, activeConversation, markRead]);
 
-  // Socket: message sent confirmation
   useEffect(() => {
     return onMessageSent((msg: SocketMessage) => {
       setActiveMessages(prev => prev.map(m => m._id === `temp-${msg._id}` || m._id.startsWith('temp-') ? { ...m, _id: msg._id, read: msg.read, createdAt: msg.createdAt } : m));
@@ -124,14 +112,12 @@ export const TeacherChat: React.FC = () => {
     });
   }, [onMessageSent]);
 
-  // Socket: messages read by other party
   useEffect(() => {
     return onMessagesRead(() => {
       setActiveMessages(prev => prev.map(m => ({ ...m, read: true })));
     });
   }, [onMessagesRead]);
 
-  // Auto-scroll when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeMessages]);
@@ -141,14 +127,14 @@ export const TeacherChat: React.FC = () => {
     c.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getOtherParticipant = (conv: Conversation) => conv.student;
+  const getOtherParticipant = (conv: Conversation) => conv.teacher;
 
   return (
-    <TeacherShellWrapper>
+    <StudentShellWrapper>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">المحادثات</h1>
-          <p className="text-sm text-muted-foreground">تواصل فوري مع الطلاب</p>
+          <p className="text-sm text-muted-foreground">تواصل مع مدرسيك</p>
         </div>
         <div className="flex items-center gap-2">
           {connected ? (
@@ -182,7 +168,7 @@ export const TeacherChat: React.FC = () => {
                   <input
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="بحث عن طالب..."
+                    placeholder="بحث عن مدرس..."
                     className="w-full rounded-lg border border-border bg-background pr-8 pl-3 py-2 text-sm outline-none focus:border-primary"
                   />
                 </div>
@@ -196,7 +182,7 @@ export const TeacherChat: React.FC = () => {
                       className="flex w-full items-center gap-3 border-b border-border p-3 text-right hover:bg-muted/50"
                     >
                       <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                        {c.name?.charAt(0)?.toUpperCase() || 'S'}
+                        {c.name?.charAt(0)?.toUpperCase() || 'T'}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold">{c.name}</p>
@@ -204,7 +190,7 @@ export const TeacherChat: React.FC = () => {
                       </div>
                     </button>
                   ))
-                ) : <p className="p-4 text-center text-sm text-muted-foreground">لا يوجد طلاب</p>}
+                ) : <p className="p-4 text-center text-sm text-muted-foreground">لا يوجد مدرسون</p>}
               </div>
             </div>
           ) : (
@@ -220,13 +206,13 @@ export const TeacherChat: React.FC = () => {
                       className={`flex w-full items-center gap-3 border-b border-border p-3 text-right transition-colors ${isActive ? 'bg-primary/5' : 'hover:bg-muted/50'}`}
                     >
                       <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                        {other?.name?.charAt(0)?.toUpperCase() || 'S'}
+                        {other?.name?.charAt(0)?.toUpperCase() || 'T'}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-bold">{other?.name || 'طالب'}</p>
-                          {conv.unreadCountTeacher > 0 && (
-                            <span className="flex-shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">{conv.unreadCountTeacher}</span>
+                          <p className="truncate text-sm font-bold">{other?.name || 'مدرس'}</p>
+                          {conv.unreadCountStudent > 0 && (
+                            <span className="flex-shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">{conv.unreadCountStudent}</span>
                           )}
                         </div>
                         <p className="truncate text-xs text-muted-foreground">{conv.lastMessage || 'لا توجد رسائل'}</p>
@@ -238,7 +224,7 @@ export const TeacherChat: React.FC = () => {
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <MessageCircle className="mb-3 size-10 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">لا توجد محادثات بعد</p>
-                  <p className="mt-1 text-xs text-muted-foreground">ابدأ محادثة جديدة مع طالب</p>
+                  <p className="mt-1 text-xs text-muted-foreground">ابدأ محادثة جديدة مع مدرسك</p>
                 </div>
               )}
             </div>
@@ -249,18 +235,16 @@ export const TeacherChat: React.FC = () => {
         <section className="flex flex-col rounded-2xl border border-border bg-card shadow-soft" style={{ height: 'calc(100vh - 200px)' }}>
           {activeConversation ? (
             <>
-              {/* Chat header */}
               <div className="flex items-center gap-3 border-b border-border p-3">
                 <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                  {activeConversation.student?.name?.charAt(0)?.toUpperCase() || 'S'}
+                  {activeConversation.teacher?.name?.charAt(0)?.toUpperCase() || 'T'}
                 </span>
                 <div>
-                  <p className="text-sm font-bold">{activeConversation.student?.name || 'طالب'}</p>
-                  <p className="text-xs text-muted-foreground">{activeConversation.student?.email}</p>
+                  <p className="text-sm font-bold">{activeConversation.teacher?.name || 'مدرس'}</p>
+                  <p className="text-xs text-muted-foreground">{activeConversation.teacher?.email}</p>
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 space-y-3 overflow-y-auto p-4">
                 {activeMessages.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-center">
@@ -285,7 +269,6 @@ export const TeacherChat: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
               <form onSubmit={handleSend} className="flex gap-2 border-t border-border p-3">
                 <input
                   value={text}
@@ -307,6 +290,6 @@ export const TeacherChat: React.FC = () => {
           )}
         </section>
       </div>
-    </TeacherShellWrapper>
+    </StudentShellWrapper>
   );
 };
